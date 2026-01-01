@@ -2,6 +2,7 @@ package io.github.dragonplatformer;
 
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
+import io.github.dragonplatformer.Entity.Player;
 
 public class GameInputProcessor implements InputProcessor {
     Player player;
@@ -20,6 +21,14 @@ public class GameInputProcessor implements InputProcessor {
             case Input.Keys.D:
             case Input.Keys.RIGHT:
                 player.setRightMove(true);
+                break;
+            case Input.Keys.S:
+            case Input.Keys.DOWN:
+                player.setDownMove(true);
+                break;
+            case Input.Keys.W:
+            case Input.Keys.UP:
+                player.setUpMove(true);
                 break;
             case Input.Keys.SPACE:
                 player.setJump(true);
@@ -41,6 +50,14 @@ public class GameInputProcessor implements InputProcessor {
             case Input.Keys.D:
             case Input.Keys.RIGHT:
                 player.setRightMove(false);
+                break;
+            case Input.Keys.S:
+            case Input.Keys.DOWN:
+                player.setDownMove(false);
+                break;
+            case Input.Keys.W:
+            case Input.Keys.UP:
+                player.setUpMove(false);
                 break;
             case Input.Keys.SHIFT_LEFT:
                 player.setGlide(false);

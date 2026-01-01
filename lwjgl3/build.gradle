@@ -5,6 +5,7 @@ buildscript {
   }
   dependencies {
     classpath "io.github.fourlastor:construo:2.1.0"
+    classpath "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
     if(enableGraalNative == 'true') {
       classpath "org.graalvm.buildtools.native:org.graalvm.buildtools.native.gradle.plugin:0.9.28"
     }
@@ -15,8 +16,10 @@ plugins {
 }
 apply plugin: 'io.github.fourlastor.construo'
 
+project.ext.texturePacker = ["assets/images", "assets/images", "packedTextures"]
 
 import io.github.fourlastor.construo.Target
+import com.badlogic.gdx.tools.texturepacker.TexturePacker
 
 sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]
 application.mainClass = 'io.github.dragonplatformer.lwjgl3.Lwjgl3Launcher'
@@ -28,6 +31,7 @@ if (JavaVersion.current().isJava9Compatible()) {
 }
 
 dependencies {
+  api "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
   implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
   implementation "com.badlogicgames.gdx:gdx-lwjgl3-angle:$gdxVersion"
   implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
@@ -70,6 +74,15 @@ jar {
 // this last step may help on some OSes that need extra instruction to make runnable JARs.
   doLast {
     file(archiveFile).setExecutable(true, false)
+  }
+}
+
+tasks.register("texturePacker") {
+  doLast {
+    if (project.ext.has('texturePacker')) {
+      logger.info "Calling TexturePacker: " + texturePacker
+      TexturePacker.process(texturePacker[0], texturePacker[1], texturePacker[2])
+    }
   }
 }
 
