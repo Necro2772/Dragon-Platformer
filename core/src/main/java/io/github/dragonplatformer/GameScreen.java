@@ -19,7 +19,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import io.github.dragonplatformer.Entity.Enemy;
 import io.github.dragonplatformer.Entity.Entity;
 import io.github.dragonplatformer.Entity.Lizard;
 import io.github.dragonplatformer.Entity.Player;

@@ -1,13 +1,10 @@
 package io.github.dragonplatformer;
 
 import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
@@ -23,9 +20,6 @@ public class Main extends Game {
         viewport = new ExtendViewport(48, 27, new OrthographicCamera());
         font = new BitmapFont();
         manager = new AssetManager();
-
-        //font.setUseIntegerPositions(false);
-        //font.getData().setScale(20f / Gdx.graphics.getHeight());
 
         this.setScreen(new MainMenu(this));
     }

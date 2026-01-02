@@ -1,11 +1,40 @@
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 eclipse.project.name = appName + '-core'
 
+
 dependencies {
   api "com.badlogicgames.gdx:gdx:$gdxVersion"
   api "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+  api "com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion"
+  api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+
+  testImplementation("org.mockito:mockito-core:1.+")
+  testImplementation(platform("org.junit:junit-bom:5.10.0"))
+  testImplementation("org.junit.jupiter:junit-jupiter")
+  testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+  testImplementation("com.badlogicgames.gdx:gdx:$gdxVersion")
+  testImplementation("com.badlogicgames.gdx:gdx-box2d:$gdxVersion")
+  testImplementation("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop")
+  testImplementation("com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop")
+
 
   if(enableGraalNative == 'true') {
     implementation "io.github.berstanio:gdx-svmhelper-annotations:$graalHelperVersion"
   }
 }
+
+tasks.named('test', Test) {
+  useJUnitPlatform()
+
+  maxHeapSize = '1G'
+  setWorkingDir("${project.rootDir}/assets/")
+
+
+  jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
+
+  testLogging {
+    events "passed"
+  }
+}
+

@@ -47,10 +47,6 @@ public abstract class AttackEffect extends Entity {
             getWidth() / 2f, getHeight() / 2f, getWidth(), getHeight(), getDirection(), 1, getRotation());
     }
 
-    public void destroy() {
-        getBody().getWorld().destroyBody(getBody());
-    }
-
     public AttackState getState() {
         return state;
     }

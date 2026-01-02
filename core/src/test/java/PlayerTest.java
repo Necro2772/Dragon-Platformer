@@ -1,0 +1,35 @@
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.backends.headless.HeadlessApplication;
+import com.badlogic.gdx.backends.headless.HeadlessApplicationConfiguration;
+import com.badlogic.gdx.graphics.GL20;
+import io.github.dragonplatformer.Entity.Player;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.mockito.Mockito.mock;
+
+public class PlayerTest {
+    private GameHeadlessApplication application;
+
+    @BeforeEach
+    public void setUp() {
+        Gdx.gl = mock(GL20.class);
+        HeadlessApplicationConfiguration config = new HeadlessApplicationConfiguration();
+        config.updatesPerSecond = 30;
+        application = new GameHeadlessApplication();
+        new HeadlessApplication(application, config);
+    }
+
+    @Test
+    public void setStateTest() {
+        application.create();
+        while (application.player == null) {
+            Assertions.assertDoesNotThrow(() -> {application.render();});
+        }
+        for (Player.PlayerState state : Player.PlayerState.values()) {
+            application.player.setState(state);
+            Assertions.assertNotNull(application.player.getCurrentAnim(), "Failed to find an animation for player state: " + state);
+        }
+    }
+}

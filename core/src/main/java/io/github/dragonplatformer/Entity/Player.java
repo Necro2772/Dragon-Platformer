@@ -109,6 +109,9 @@ public class Player extends NPC {
     @Override
     public void act(float delta) {
         float maxVelocity = 7;
+        float glideVelocity = 11;
+        float diveGlideVelocity = 15;
+        float jumpForce = 30;
         Vector2 vel = getBody().getLinearVelocity();
         Vector2 pos = getBody().getPosition();
         float speed = 0.8f;
@@ -116,19 +119,19 @@ public class Player extends NPC {
         PlayerState nextState = updatePlayerState();
 
         if (getInput().glide && !isGrounded()) {
-            maxVelocity = 9;
+            maxVelocity = glideVelocity;
             speed = 0.6f;
             switch (nextState) {
                 case DIVING:
                     getInput().diveTimer += delta;
-                    if (vel.y > -8) {
-                        getBody().applyLinearImpulse(0, -1.3f, pos.x, pos.y, true);
+                    if (vel.y > -maxVelocity) {
+                        getBody().applyLinearImpulse(0, -2.5f, pos.x, pos.y, true);
                     }
                     break;
                 case DIVESOAR:
                     getInput().diveTimer -= delta * 1.2f;
                     if (getInput().diveTimer > 0.3f) {
-                        if (vel.y < 7) {
+                        if (vel.y < maxVelocity) {
                             getBody().applyLinearImpulse(0, 4, pos.x, pos.y, true);
                         }
                     } else {
@@ -137,7 +140,7 @@ public class Player extends NPC {
                     break;
                 case GLIDING:
                     if (getInput().diveTimer > 0) {
-                        maxVelocity = 11;
+                        maxVelocity = diveGlideVelocity;
                         if (1 < Math.abs(vel.x) && Math.abs(vel.x) < maxVelocity && (getInput().leftMove || getInput().rightMove)) {
                             getBody().applyLinearImpulse(5 * getDirection(), 0, pos.x, pos.y, true);
                         }
@@ -153,7 +156,7 @@ public class Player extends NPC {
                     getBody().applyLinearImpulse(0, -25 - vel.y, pos.x, pos.y, true);
                     break;
                 case DASH:
-                    getBody().applyLinearImpulse(getDirection() * 20 - vel.x, 10, pos.x, pos.y, true);
+                    getBody().applyLinearImpulse(getDirection() * 30 - vel.x, 10, pos.x, pos.y, true);
                     break;
             }
         }
@@ -168,7 +171,7 @@ public class Player extends NPC {
             getBody().applyLinearImpulse(-vel.x / 8, 0, pos.x, pos.y, true);
         }
         if (nextState == PlayerState.JUMPING) {
-            getBody().applyLinearImpulse(0, 20 - vel.y * 1.8f, pos.x, pos.y, true);
+            getBody().applyLinearImpulse(0, jumpForce - vel.y * 1.8f, pos.x, pos.y, true);
             getInput().numJumps--;
             setJump(false);
         } else if (getInput().jump) setJump(false);
@@ -242,6 +245,10 @@ public class Player extends NPC {
 
     public float getStateTime() {
         return stateTime;
+    }
+
+    public Animation<TextureRegion> getCurrentAnim() {
+        return anims.get(getState());
     }
 
     public playerInput getInput() {

@@ -1,9 +1,6 @@
 package io.github.dragonplatformer;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.assets.loaders.TextureAtlasLoader;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
@@ -16,7 +13,7 @@ public class MainMenu implements Screen {
     public MainMenu(final Main game) {
         this.game = game;
 
-        currentLevel = "tiledmaps/test2.tmx";
+        currentLevel = "tiledmaps/cavern.tmx";
 
         game.manager.load("images/pack.atlas", TextureAtlas.class);
         game.manager.setLoader(TiledMap.class, new TmxMapLoader());
