@@ -6,72 +6,103 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import io.github.dragonplatformer.Entity.AttackEffect.AttackEffect;
+import io.github.dragonplatformer.Entity.AttackEffect.MeleeAttack;
+import io.github.dragonplatformer.Entity.AttackEffect.Projectile;
 import io.github.dragonplatformer.GameContactListener;
+import io.github.dragonplatformer.GameScreen;
 
 import java.util.Map;
 
-public class Player extends NPC {
+public class Player extends Creature {
+    private final GameScreen screen;
     private final Map<PlayerState, Animation<TextureRegion>> anims;
-    private final playerInput input;
+    private final Map<AttackEffect.AttackState, Animation<TextureRegion>> fireballAnims;
+    private final Map<AttackEffect.AttackState, Animation<TextureRegion>> meleeAnims;
+    public final playerInput input;
     private final playerStats stats;
     private PlayerState state;
     private PlayerState bufferedState;
     private float stateTime;
 
-    public Player(TextureAtlas atlas, float x, float y, float width, float height, World world) {
+    public Player(TextureAtlas atlas, float x, float y, float width, float height, World world, GameScreen screen) {
         super(x, y, width, height, world);
+        this.screen = screen;
         getBody().getFixtureList().get(0).getFilterData().categoryBits = GameContactListener.FilterBits.PLAYER.getBit();
-
-        MassData md = new MassData();
-        md.mass = 2f;
-        getBody().setMassData(md);
+        getBody().getFixtureList().get(0).setDensity(0.225f);
+        getBody().resetMassData();
         stateTime = 0;
-        input = new playerInput();
+        input = new playerInput(this);
         stats = new playerStats();
         state = PlayerState.IDLE;
 
         anims = Map.ofEntries(
-            Map.entry(Player.PlayerState.IDLE, new Animation<>(
+            Map.entry(PlayerState.IDLE, new Animation<>(
                 1/3f,
                 atlas.findRegions("dragon_idle"),
                 Animation.PlayMode.NORMAL
-            )), Map.entry(Player.PlayerState.RUNNING, new Animation<>(
+            )), Map.entry(PlayerState.RUNNING, new Animation<>(
                 1/3f,
                 atlas.findRegions("dragon_run"),
                 Animation.PlayMode.LOOP_PINGPONG
-            )), Map.entry(Player.PlayerState.JUMPING, new Animation<>(
+            )), Map.entry(PlayerState.JUMPING, new Animation<>(
                 1/5f,
                 atlas.findRegions("dragon_flap"),
                 Animation.PlayMode.LOOP
-            )), Map.entry(Player.PlayerState.FLYING, new Animation<>(
+            )), Map.entry(PlayerState.FLYING, new Animation<>(
                 1/5f,
                 atlas.findRegions("dragon_fly"),
                 Animation.PlayMode.LOOP
-            )), Map.entry(Player.PlayerState.GLIDING, new Animation<>(
+            )), Map.entry(PlayerState.GLIDING, new Animation<>(
                 1/3f,
                 atlas.findRegions("dragon_glide"),
                 Animation.PlayMode.LOOP
-            )), Map.entry(Player.PlayerState.DIVING, new Animation<>(
+            )), Map.entry(PlayerState.DIVING, new Animation<>(
                 1/3f,
                 atlas.findRegions("dragon_dive"),
                 Animation.PlayMode.LOOP
-            )), Map.entry(Player.PlayerState.DIVESOAR, new Animation<>(
+            )), Map.entry(PlayerState.DIVESOAR, new Animation<>(
                 1/3f,
                 atlas.findRegions("dragon_divesoar"),
                 Animation.PlayMode.LOOP
-            )), Map.entry(Player.PlayerState.DASH, new Animation<>(
+            )), Map.entry(PlayerState.DASH, new Animation<>(
                 1/3f,
                 atlas.findRegions("dragon_dash"),
                 Animation.PlayMode.LOOP
-            )), Map.entry(Player.PlayerState.DASHDIVE, new Animation<>(
+            )), Map.entry(PlayerState.DASHDIVE, new Animation<>(
                 1/3f,
                 atlas.findRegions("dragon_dive"),
                 Animation.PlayMode.LOOP
+            )), Map.entry(PlayerState.ATTACKFORWARD, new Animation<>(
+                1/4f,
+                atlas.findRegions("dragon_attackforward"),
+                Animation.PlayMode.NORMAL
+            )), Map.entry(PlayerState.ATTACKDOWN, new Animation<>(
+                1/4f,
+                atlas.findRegions("dragon_attackdown"),
+                Animation.PlayMode.NORMAL
+            )), Map.entry(PlayerState.ATTACKUP, new Animation<>(
+                1/4f,
+                atlas.findRegions("dragon_attackup"),
+                Animation.PlayMode.NORMAL
             ))
         );
+
+        fireballAnims = Map.ofEntries(Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
+                1/3f,
+                atlas.findRegions("fireball"),
+                Animation.PlayMode.LOOP
+            ))
+        );
+
+        meleeAnims = Map.ofEntries(Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
+            1/12f,
+            atlas.findRegions("clawswipe"),
+            Animation.PlayMode.NORMAL
+        )));
     }
 
-    private PlayerState updatePlayerState() {
+    private void updatePlayerState() {
         PlayerState nextState = PlayerState.IDLE;
         if (getInput().glide && !isGrounded()) {
             if (getInput().downMove) {
@@ -88,7 +119,7 @@ public class Player extends NPC {
                     nextState = PlayerState.DASH;
                 }
                 getInput().numJumps--;
-                setJump(false);
+                input.setJump(false);
             }
         } else {
             getInput().diveTimer = 0;
@@ -103,25 +134,32 @@ public class Player extends NPC {
                 nextState = PlayerState.FLYING;
             }
         }
-        return nextState;
+
+        switch (nextState) {
+            case JUMPING:
+                setState(nextState, PlayerState.FLYING);
+                break;
+            case DASHDIVE:
+            case DASH:
+                setState(nextState, PlayerState.GLIDING);
+                break;
+            default:
+                setState(nextState);
+        }
     }
 
-    @Override
-    public void act(float delta) {
+    private void updatePlayerMovement(float delta) {
         float maxVelocity = 7;
         float glideVelocity = 11;
         float diveGlideVelocity = 15;
-        float jumpForce = 30;
         Vector2 vel = getBody().getLinearVelocity();
         Vector2 pos = getBody().getPosition();
         float speed = 0.8f;
 
-        PlayerState nextState = updatePlayerState();
-
         if (getInput().glide && !isGrounded()) {
             maxVelocity = glideVelocity;
             speed = 0.6f;
-            switch (nextState) {
+            switch (state) {
                 case DIVING:
                     getInput().diveTimer += delta;
                     if (vel.y > -maxVelocity) {
@@ -129,7 +167,7 @@ public class Player extends NPC {
                     }
                     break;
                 case DIVESOAR:
-                    getInput().diveTimer -= delta * 1.2f;
+                    getInput().diveTimer -= delta;
                     if (getInput().diveTimer > 0.3f) {
                         if (vel.y < maxVelocity) {
                             getBody().applyLinearImpulse(0, 4, pos.x, pos.y, true);
@@ -144,19 +182,13 @@ public class Player extends NPC {
                         if (1 < Math.abs(vel.x) && Math.abs(vel.x) < maxVelocity && (getInput().leftMove || getInput().rightMove)) {
                             getBody().applyLinearImpulse(5 * getDirection(), 0, pos.x, pos.y, true);
                         }
-                        getInput().diveTimer -= delta * 0.1f;
+                        getInput().diveTimer -= delta * 0.05f;
                     } else {
                         getInput().diveTimer = 0;
                     }
                     if (vel.y < -1 && Math.abs(vel.x) > 0.7f) {
                         getBody().applyLinearImpulse(0, -vel.y / 8, pos.x, pos.y, true);
                     }
-                    break;
-                case DASHDIVE:
-                    getBody().applyLinearImpulse(0, -25 - vel.y, pos.x, pos.y, true);
-                    break;
-                case DASH:
-                    getBody().applyLinearImpulse(getDirection() * 30 - vel.x, 10, pos.x, pos.y, true);
                     break;
             }
         }
@@ -170,22 +202,17 @@ public class Player extends NPC {
         if (isGrounded() && Math.abs(vel.x) > 1 && !getInput().rightMove && !getInput().leftMove) {
             getBody().applyLinearImpulse(-vel.x / 8, 0, pos.x, pos.y, true);
         }
-        if (nextState == PlayerState.JUMPING) {
-            getBody().applyLinearImpulse(0, jumpForce - vel.y * 1.8f, pos.x, pos.y, true);
-            getInput().numJumps--;
-            setJump(false);
-        } else if (getInput().jump) setJump(false);
+        if (getInput().jump) input.setJump(false);
+    }
 
-        switch (nextState) {
-            case JUMPING:
-                setState(nextState, PlayerState.FLYING);
-                break;
-            case DASHDIVE:
-            case DASH:
-                setState(nextState, PlayerState.GLIDING);
-                break;
-            default:
-                setState(nextState);
+    @Override
+    public void act(float delta) {
+        getStats().updateCooldowns(delta);
+        updatePlayerState();
+        updatePlayerMovement(delta);
+
+        if (input.getProjectile() && getStats().getProjectileCD() < 0) {
+            projectileAttack();
         }
     }
 
@@ -217,8 +244,9 @@ public class Player extends NPC {
             getWidth() / 2f, getHeight() / 2f, getWidth(), getHeight(), getDirection(), 1, 0);
     }
 
+    @Override
     public void damage(int attackDamage, Vector2 attackOrigin) {
-        getStats().setHealth(getStats().getHealth() - attackDamage);
+        super.damage(attackDamage, attackOrigin);
         if (attackOrigin.x - getBody().getPosition().x < 0) {
             getBody().applyLinearImpulse(new Vector2(10, 10), getBody().getPosition(), true);
         } else {
@@ -226,21 +254,79 @@ public class Player extends NPC {
         }
     }
 
+    @Override
+    public void death() {
+        screen.gameOver();
+    }
+
+    private void endState() {
+    }
+
+    private void beginState() {
+        Vector2 vel = getBody().getLinearVelocity();
+        Vector2 pos = getBody().getPosition();
+        MeleeAttack attack;
+        switch(state) {
+            case JUMPING:
+                getBody().applyLinearImpulse(0, getStats().jumpForce - vel.y * 1.8f, pos.x, pos.y, true);
+                getInput().numJumps--;
+                break;
+            case DASHDIVE:
+                getBody().applyLinearImpulse(0, -25 - vel.y, pos.x, pos.y, true);
+                break;
+            case DASH:
+                getBody().applyLinearImpulse(getDirection() * 30 - vel.x, 10, pos.x, pos.y, true);
+                break;
+            case ATTACKUP:
+                attack = new MeleeAttack(getDirection() * 1.5f, 2, 3, 3, getBody().getWorld(), meleeAnims,
+                    (short) (GameContactListener.FilterBits.ENEMY.getBit()
+                        + GameContactListener.FilterBits.EFFECT.getBit()),
+                    GameContactListener.FilterGroup.PLAYERATTACK.getBit(),
+                    getBody());
+                attack.setDirection(getDirection());
+                attack.setRotation(0);
+                break;
+            case ATTACKFORWARD:
+                attack = new MeleeAttack(getDirection() * 2, 0, 3, 3, getBody().getWorld(), meleeAnims,
+                    (short) (GameContactListener.FilterBits.ENEMY.getBit()
+                        + GameContactListener.FilterBits.EFFECT.getBit()),
+                    GameContactListener.FilterGroup.PLAYERATTACK.getBit(),
+                    getBody());
+                attack.setDirection(getDirection());
+                attack.setRotation(0);
+                break;
+            case ATTACKDOWN:
+                attack = new MeleeAttack(getDirection() * 1.5f, -2, 3, 3, getBody().getWorld(), meleeAnims,
+                    (short) (GameContactListener.FilterBits.ENEMY.getBit()
+                        + GameContactListener.FilterBits.EFFECT.getBit()),
+                    GameContactListener.FilterGroup.PLAYERATTACK.getBit(),
+                    getBody());
+                attack.setDirection(getDirection());
+                attack.setRotation(0);
+                break;
+        }
+    }
+
     public PlayerState getState() {
         return state;
     }
 
-    public void setState(PlayerState state) {
+    public boolean setState(PlayerState state) {
         if (state != this.getState() && bufferedState == null) {
+            endState();
             this.state = state;
             stateTime = 0;
+            beginState();
+            return true;
         }
+        return false;
     }
 
     public void setState(PlayerState state, PlayerState bufferedState) {
-        setState(state);
-        this.bufferedState = bufferedState;
-        stateTime = 0;
+        if (setState(state)) {
+            this.bufferedState = bufferedState;
+            stateTime = 0;
+        }
     }
 
     public float getStateTime() {
@@ -259,34 +345,38 @@ public class Player extends NPC {
         return stats;
     }
 
-    public void setLeftMove(boolean leftMove) {
-        if (getInput().rightMove && leftMove) getInput().rightMove = false;
-        getInput().leftMove = leftMove;
-        if (leftMove) setDirection(-1);
+    public void meleeAttack() {
+        switch (getState()) {
+            case ATTACKFORWARD:
+            case ATTACKUP:
+            case ATTACKDOWN:
+                return;
+        }
+        if (input.downMove) {
+            setState(PlayerState.ATTACKDOWN, PlayerState.IDLE);
+        } else if (input.upMove) {
+            setState(PlayerState.ATTACKUP, PlayerState.IDLE);
+        } else {
+            setState(PlayerState.ATTACKFORWARD, PlayerState.IDLE);
+        }
     }
 
-    public void setRightMove(boolean rightMove) {
-        if (getInput().leftMove && rightMove) getInput().leftMove = false;
-        getInput().rightMove = rightMove;
-        if (rightMove) setDirection(1);
-    }
+    public void projectileAttack() {
+        getStats().resetProjectileCD();
+        float projSpeed = 15f;
 
-    public void setDownMove(boolean downMove) {
-        if (getInput().upMove && downMove) getInput().upMove = false;
-        getInput().downMove = downMove;
-    }
-
-    public void setUpMove(boolean upMove) {
-        if (getInput().downMove && upMove) getInput().downMove = false;
-        getInput().upMove = upMove;
-    }
-
-    public void setJump(boolean jump) {
-        getInput().jump = jump;
-    }
-
-    public void setGlide(boolean glide) {
-        getInput().glide = glide;
+        Projectile fireball = new Projectile(getBody().getPosition().x, getBody().getPosition().y,
+            1.5f, 1.5f, getBody().getWorld(), fireballAnims, 1,
+            (short) (GameContactListener.FilterBits.ENEMY.getBit()
+                + GameContactListener.FilterBits.STATIC.getBit()
+                + GameContactListener.FilterBits.EFFECT.getBit()),
+            GameContactListener.FilterGroup.PLAYERATTACK.getBit());
+        Vector2 impulse = new Vector2();
+        impulse.x = projSpeed * getDirection();
+        if (input.upMove) impulse.y = projSpeed * 0.5f;
+        else if (input.downMove) impulse.y = -projSpeed * 0.5f;
+        fireball.getBody().applyLinearImpulse(impulse, new Vector2(0, 0), true);
+        fireball.setDirection(getDirection());
     }
 
     public enum PlayerState {
@@ -299,39 +389,94 @@ public class Player extends NPC {
         DIVESOAR,
         DASH,
         DASHDIVE,
+        ATTACKFORWARD,
+        ATTACKUP,
+        ATTACKDOWN
     }
 
     public static class playerInput {
+        private final Player player;
         public boolean leftMove;
         public boolean rightMove;
         public boolean downMove;
         public boolean upMove;
         public boolean jump;
         public boolean glide;
+        public boolean projectile;
         public int numJumps;
         public float diveTimer;
 
-        public playerInput() {
+        public playerInput(Player player) {
+            this.player = player;
             leftMove = false;
             rightMove = false;
             downMove = false;
             upMove = false;
             jump = false;
             glide = false;
+            projectile = false;
             numJumps = 1;
             diveTimer = 0;
         }
+
+        public void setLeftMove(boolean leftMove) {
+            if (rightMove && leftMove) rightMove = false;
+            this.leftMove = leftMove;
+            if (leftMove) player.setDirection(-1);
+        }
+
+        public void setRightMove(boolean rightMove) {
+            if (leftMove && rightMove) leftMove = false;
+            this.rightMove = rightMove;
+            if (rightMove) player.setDirection(1);
+        }
+
+        public void setDownMove(boolean downMove) {
+            if (upMove && downMove) upMove = false;
+            this.downMove = downMove;
+        }
+
+        public void setUpMove(boolean upMove) {
+            if (downMove && upMove) downMove = false;
+            this.upMove = upMove;
+        }
+
+        public void setJump(boolean jump) {
+            this.jump = jump;
+        }
+
+        public void setGlide(boolean glide) {
+            this.glide = glide;
+        }
+
+        public void setProjectile(boolean inputProjectile) {
+            this.projectile = inputProjectile;
+        }
+
+        public boolean getProjectile() {
+            return projectile;
+        }
     }
 
-    public static class playerStats {
+    public class playerStats extends CreatureStats {
         private int maxJumps;
-        private int maxHealth;
-        private int health;
+        private float projectileMaxCD;
+        private float projectileCD;
+        public float jumpForce = 30;
 
         public playerStats() {
+            super(10);
             setMaxJumps(4);
-            setMaxHealth(10);
-            setHealth(getMaxHealth());
+            setProjectileMaxCD(0.3f);
+            setProjectileCD(getProjectileMaxCD());
+        }
+
+        public void updateCooldowns(float delta) {
+            if(getProjectileCD() > 0) setProjectileCD(getProjectileCD() - delta);
+        }
+
+        public void resetProjectileCD() {
+            setProjectileCD(getProjectileMaxCD());
         }
 
         public int getMaxJumps() {
@@ -342,20 +487,20 @@ public class Player extends NPC {
             this.maxJumps = maxJumps;
         }
 
-        public int getMaxHealth() {
-            return maxHealth;
+        public float getProjectileMaxCD() {
+            return projectileMaxCD;
         }
 
-        public void setMaxHealth(int maxHealth) {
-            this.maxHealth = maxHealth;
+        public void setProjectileMaxCD(float projectileMaxCD) {
+            this.projectileMaxCD = projectileMaxCD;
         }
 
-        public int getHealth() {
-            return health;
+        public float getProjectileCD() {
+            return projectileCD;
         }
 
-        public void setHealth(int health) {
-            this.health = health;
+        public void setProjectileCD(float projectileCD) {
+            this.projectileCD = projectileCD;
         }
     }
 }

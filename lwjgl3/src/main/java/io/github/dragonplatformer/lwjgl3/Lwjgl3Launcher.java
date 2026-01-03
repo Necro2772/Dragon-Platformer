@@ -14,11 +14,8 @@ public class Lwjgl3Launcher {
         settings.maxWidth = 1024;
         settings.maxHeight = 1024;
         TexturePacker.process(settings, "images", "images", "pack");
-        createApplication();
-    }
 
-    private static Lwjgl3Application createApplication() {
-        return new Lwjgl3Application(new Main(), getDefaultConfiguration());
+        new Lwjgl3Application(new Main(), getDefaultConfiguration());
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {

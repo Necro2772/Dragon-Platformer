@@ -9,16 +9,20 @@ public abstract class Entity {
     private final float height;
     private int direction;
 
-    public Entity(float x, float y, float width, float height, World world) {
+    public Entity(float x, float y, float width, float height, World world, Body body) {
         this.height = height;
         this.width = width;
         setDirection(1);
-        BodyDef bodyDef = new BodyDef();
-        bodyDef.type = BodyDef.BodyType.DynamicBody;
-        bodyDef.fixedRotation = true;
-        bodyDef.position.set(x, y);
-        body = world.createBody(bodyDef);
-        getBody().setUserData(this);
+        if (body == null) {
+            BodyDef bodyDef = new BodyDef();
+            bodyDef.type = BodyDef.BodyType.DynamicBody;
+            bodyDef.fixedRotation = true;
+            bodyDef.position.set(x, y);
+            this.body = world.createBody(bodyDef);
+            getBody().setUserData(this);
+        } else {
+            this.body = body;
+        }
     }
 
     public abstract void act(float delta);

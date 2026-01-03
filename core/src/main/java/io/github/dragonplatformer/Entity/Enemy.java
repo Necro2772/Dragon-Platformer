@@ -9,7 +9,7 @@ import io.github.dragonplatformer.GameContactListener;
 
 import java.util.Map;
 
-public abstract class Enemy extends NPC {
+public abstract class Enemy extends Creature {
     protected final Map<EnemyState, Animation<TextureRegion>> anims;
     protected EnemyStats stats;
     private EnemyState state;
@@ -46,7 +46,7 @@ public abstract class Enemy extends NPC {
     public void beginContact(Fixture entityFixture, Fixture contactFixture) {
         super.beginContact(entityFixture, contactFixture);
         if (getBody().getFixtureList().indexOf(entityFixture, true) == 2) {
-            if (contactFixture.getBody().getUserData() instanceof Player) {
+            if (contactFixture.getUserData() instanceof Player) {
                 setPlayerSighted(true);
                 playerPos = contactFixture.getBody().getPosition();
             }
@@ -57,7 +57,7 @@ public abstract class Enemy extends NPC {
     public void endContact(Fixture entityFixture, Fixture contactFixture) {
         super.endContact(entityFixture, contactFixture);
         if (getBody().getFixtureList().indexOf(entityFixture, true) == 2) {
-            if (contactFixture.getBody().getUserData() instanceof Player) {
+            if (contactFixture.getUserData() instanceof Player) {
                 setPlayerSighted(false);
             }
         }
@@ -66,16 +66,33 @@ public abstract class Enemy extends NPC {
     @Override
     public void draw(SpriteBatch batch, float delta) {
         stateTime = stateTime + delta;
-        if (getBufferedState() != null && anims.get(getState()).isAnimationFinished(getStateTime())) {
-            state = getBufferedState();
-            bufferedState = null;
-            stateTime = 0;
+        if (anims.get(getState()) == null) {
+            if (getState() == EnemyState.DEATH) {
+                getBody().getWorld().destroyBody(getBody());
+                return;
+            }
+        }
+        if (anims.get(getState()).isAnimationFinished(getStateTime())) {
+            if (getState() == EnemyState.DEATH) {
+                getBody().getWorld().destroyBody(getBody());
+                return;
+            }
+            else if (getBufferedState() != null) {
+                state = getBufferedState();
+                bufferedState = null;
+                stateTime = 0;
+            }
         }
         TextureRegion frame = anims.get(getState()).getKeyFrame(getStateTime());
         batch.draw(frame,
             this.getBody().getPosition().x - getWidth() / 2f,
             this.getBody().getPosition().y - getHeight() / 2f,
             getWidth() / 2f, getHeight() / 2f, getWidth(), getHeight(), getDirection(), 1, 0);
+    }
+
+    @Override
+    public void death() {
+        setState(EnemyState.DEATH);
     }
 
     public EnemyState getState() {
@@ -105,6 +122,7 @@ public abstract class Enemy extends NPC {
     public enum EnemyState {
         IDLE,
         ATTACKING,
+        DEATH,
     }
 
     public void setState(EnemyState state) {
@@ -128,13 +146,10 @@ public abstract class Enemy extends NPC {
         this.playerSighted = playerSighted;
     }
 
-    public abstract class EnemyStats {
-        public int maxHealth;
-        public int health;
+    public abstract class EnemyStats extends CreatureStats {
 
-        EnemyStats(int maxHealth) {
-            this.maxHealth = maxHealth;
-            this.health = maxHealth;
+        public EnemyStats(int maxHealth) {
+            super(maxHealth);
         }
     }
 }

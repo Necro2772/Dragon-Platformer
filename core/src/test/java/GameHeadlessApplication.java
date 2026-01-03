@@ -30,7 +30,7 @@ public class GameHeadlessApplication extends Game {
         if (assets.update()) {
             TextureAtlas atlas = assets.get("images/pack.atlas", TextureAtlas.class);
             world = new World(new Vector2(0, 9.8f), true);
-            player = new Player(atlas, 2, 2, 1, 1, world);
+            player = new Player(atlas, 2, 2, 1, 1, world, null);
         }
 
     }

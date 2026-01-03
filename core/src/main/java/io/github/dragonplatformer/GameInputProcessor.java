@@ -16,25 +16,28 @@ public class GameInputProcessor implements InputProcessor {
         switch (keycode) {
             case Input.Keys.A:
             case Input.Keys.LEFT:
-                player.setLeftMove(true);
+                player.input.setLeftMove(true);
                 break;
             case Input.Keys.D:
             case Input.Keys.RIGHT:
-                player.setRightMove(true);
+                player.input.setRightMove(true);
                 break;
             case Input.Keys.S:
             case Input.Keys.DOWN:
-                player.setDownMove(true);
+                player.input.setDownMove(true);
                 break;
             case Input.Keys.W:
             case Input.Keys.UP:
-                player.setUpMove(true);
+                player.input.setUpMove(true);
                 break;
             case Input.Keys.SPACE:
-                player.setJump(true);
+                player.input.setJump(true);
                 break;
             case Input.Keys.SHIFT_LEFT:
-                player.setGlide(true);
+                player.input.setGlide(true);
+                break;
+            case Input.Keys.E:
+                player.input.setProjectile(true);
                 break;
         }
         return false;
@@ -45,22 +48,25 @@ public class GameInputProcessor implements InputProcessor {
         switch (keycode) {
             case Input.Keys.A:
             case Input.Keys.LEFT:
-                player.setLeftMove(false);
+                player.input.setLeftMove(false);
                 break;
             case Input.Keys.D:
             case Input.Keys.RIGHT:
-                player.setRightMove(false);
+                player.input.setRightMove(false);
                 break;
             case Input.Keys.S:
             case Input.Keys.DOWN:
-                player.setDownMove(false);
+                player.input.setDownMove(false);
                 break;
             case Input.Keys.W:
             case Input.Keys.UP:
-                player.setUpMove(false);
+                player.input.setUpMove(false);
                 break;
             case Input.Keys.SHIFT_LEFT:
-                player.setGlide(false);
+                player.input.setGlide(false);
+                break;
+            case Input.Keys.E:
+                player.input.setProjectile(false);
                 break;
         }
         return false;
@@ -73,11 +79,24 @@ public class GameInputProcessor implements InputProcessor {
 
     @Override
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+        switch (button) {
+            case Input.Buttons.RIGHT:
+                player.input.setProjectile(true);
+                break;
+            case Input.Buttons.LEFT:
+                player.meleeAttack();
+                break;
+        }
         return false;
     }
 
     @Override
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+        switch (button) {
+            case Input.Buttons.RIGHT:
+                player.input.setProjectile(false);
+                break;
+        }
         return false;
     }
 

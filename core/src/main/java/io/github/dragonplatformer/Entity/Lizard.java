@@ -12,7 +12,7 @@ import io.github.dragonplatformer.GameContactListener;
 import java.util.Map;
 
 public class Lizard extends Enemy {
-    final Map<AttackEffect.AttackState, Animation<TextureRegion>> fireballAnims;
+    private final Map<AttackEffect.AttackState, Animation<TextureRegion>> fireballAnims;
     private float attackCD;
 
     public Lizard(TextureAtlas atlas, float x, float y, float width, float height, World world) {
@@ -43,10 +43,12 @@ public class Lizard extends Enemy {
     @Override
     public void act(float delta) {
         int attackSpd = 15;
+        float attackMaxCD = 1.5f;
+
         attackCD -= delta;
         if (getPlayerSighted() && attackCD < 0) {
             setState(EnemyState.ATTACKING, EnemyState.IDLE);
-            attackCD = 1;
+            attackCD = attackMaxCD;
             float posx = getBody().getPosition().x;
             float posy = getBody().getPosition().y;
             Vector2 dir = new Vector2(getPlayerPos().x - posx, getPlayerPos().y - posy).nor();
@@ -54,7 +56,9 @@ public class Lizard extends Enemy {
             Projectile fireball = new Projectile(getBody().getPosition().x, getBody().getPosition().y,
                 1, 1, getBody().getWorld(), fireballAnims, 1,
                 (short) (GameContactListener.FilterBits.PLAYER.getBit()
-                    + GameContactListener.FilterBits.STATIC.getBit()));
+                    + GameContactListener.FilterBits.STATIC.getBit()
+                    + GameContactListener.FilterBits.EFFECT.getBit()),
+                GameContactListener.FilterGroup.ENEMYATTACK.getBit());
             fireball.getBody().applyLinearImpulse(dir.x, dir.y, 0, 0, true);
             fireball.setRotation(dir.angleDeg());
         }
@@ -62,7 +66,7 @@ public class Lizard extends Enemy {
 
     public class LizardStats extends EnemyStats {
         LizardStats() {
-            super(10);
+            super(1);
         }
     }
 }

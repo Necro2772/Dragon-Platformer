@@ -19,14 +19,14 @@ public class PlayerTest {
         config.updatesPerSecond = 30;
         application = new GameHeadlessApplication();
         new HeadlessApplication(application, config);
+        application.create();
+        while (application.player == null) {
+            Assertions.assertDoesNotThrow(() -> application.render());
+        }
     }
 
     @Test
     public void setStateTest() {
-        application.create();
-        while (application.player == null) {
-            Assertions.assertDoesNotThrow(() -> {application.render();});
-        }
         for (Player.PlayerState state : Player.PlayerState.values()) {
             application.player.setState(state);
             Assertions.assertNotNull(application.player.getCurrentAnim(), "Failed to find an animation for player state: " + state);

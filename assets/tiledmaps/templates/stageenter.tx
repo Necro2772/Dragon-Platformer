@@ -2,7 +2,7 @@
 <template>
  <object>
   <properties>
-   <property name="player-spawn" type="bool" value="true"/>
+   <property name="stageenter" type="bool" value="true"/>
   </properties>
   <point/>
  </object>

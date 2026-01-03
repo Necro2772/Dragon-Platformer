@@ -7,10 +7,12 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.MapObjects;
+import com.badlogic.gdx.maps.MapProperties;
 import com.badlogic.gdx.maps.objects.EllipseMapObject;
 import com.badlogic.gdx.maps.objects.PolygonMapObject;
 import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.*;
 import com.badlogic.gdx.physics.box2d.*;
@@ -22,9 +24,10 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import io.github.dragonplatformer.Entity.Entity;
 import io.github.dragonplatformer.Entity.Lizard;
 import io.github.dragonplatformer.Entity.Player;
+import io.github.dragonplatformer.Entity.Portal;
 
 public class GameScreen implements Screen {
-    final Main game;
+    private final Main game;
 
     private final Stage uiStage;
     private final World world;
@@ -53,12 +56,20 @@ public class GameScreen implements Screen {
         float playery = 1;
         MapObjects flags = this.map.getLayers().get("Flags").getObjects();
         for (int i = 0; i < flags.getCount(); i++) {
-            if (flags.get(i).getProperties().containsKey("player-spawn")) {
+            if (flags.get(i).getProperties().containsKey("stageenter")) {
                 playerx = (float) flags.get(i).getProperties().get("x") * tiledMapRenderer.getUnitScale();
                 playery = (float) flags.get(i).getProperties().get("y") * tiledMapRenderer.getUnitScale();
             }
+            if (flags.get(i).getProperties().containsKey("stageexit")) {
+                MapProperties properties = flags.get(i).getProperties();
+                float width = (Float) properties.get("width") * tiledMapRenderer.getUnitScale();
+                float height = (Float) properties.get("height") * tiledMapRenderer.getUnitScale();
+                float x = (Float) properties.get("x") * tiledMapRenderer.getUnitScale() + width / 2;
+                float y = (Float) properties.get("y") * tiledMapRenderer.getUnitScale() + height / 2;
+                new Portal(x, y, width, height, world, (String) properties.get("stageexit"), this);
+            }
         }
-        player = new Player(atlas, playerx, playery, 3, 3, world);
+        player = new Player(atlas, playerx, playery, 3, 3, world, this);
         loadTilemapData();
 
         Label.LabelStyle style = new Label.LabelStyle();
@@ -73,16 +84,18 @@ public class GameScreen implements Screen {
     }
 
     private void loadTilemapData() {
-        MapObjects enemies = this.map.getLayers().get("Enemies").getObjects();
-        for (int i = 0; i < enemies.getCount(); i++) {
-            MapObject enemy = enemies.get(i);
-            float posx = (float) enemy.getProperties().get("x") * tiledMapRenderer.getUnitScale();
-            float posy = (float) enemy.getProperties().get("y") * tiledMapRenderer.getUnitScale();
-            String type = (String) enemy.getProperties().get("type");
-            switch (type) {
-                case "lizard":
-                    new Lizard(atlas, posx, posy, 2, 2, world);
-                    break;
+        if (map.getLayers().get("Enemies") != null) {
+            MapObjects enemies = this.map.getLayers().get("Enemies").getObjects();
+            for (int i = 0; i < enemies.getCount(); i++) {
+                MapObject enemy = enemies.get(i);
+                float posx = (float) enemy.getProperties().get("x") * tiledMapRenderer.getUnitScale();
+                float posy = (float) enemy.getProperties().get("y") * tiledMapRenderer.getUnitScale();
+                String type = (String) enemy.getProperties().get("type");
+                switch (type) {
+                    case "lizard":
+                        new Lizard(atlas, posx, posy, 2, 2, world);
+                        break;
+                }
             }
         }
 
@@ -147,6 +160,15 @@ public class GameScreen implements Screen {
         world.step(1/60f, 6, 2);
     }
 
+    public void changeLevel(String level) {
+        this.pause();
+        game.loadNewLevel(level);
+    }
+
+    public void gameOver() {
+        changeLevel("hub");
+    }
+
     private void updateCamera() {
         game.viewport.getCamera().position.x = MathUtils.clamp(
             player.getBody().getPosition().x,
@@ -171,6 +193,11 @@ public class GameScreen implements Screen {
         world.getBodies(bodies);
         game.batch.begin();
         for (Body body : bodies) {
+            for (Fixture fixture : body.getFixtureList()) {
+                if (fixture.getUserData() != body.getUserData() && fixture.getUserData() != null) {
+                    ((Entity) fixture.getUserData()).draw(game.batch, Gdx.graphics.getDeltaTime());
+                }
+            }
             if (body.getUserData() != null) {
                 Entity e = (Entity) body.getUserData();
                 e.draw(game.batch, Gdx.graphics.getDeltaTime());

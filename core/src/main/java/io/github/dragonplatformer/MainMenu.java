@@ -1,5 +1,6 @@
 package io.github.dragonplatformer;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.maps.tiled.TiledMap;
@@ -10,14 +11,14 @@ public class MainMenu implements Screen {
     public final Main game;
     public String currentLevel;
 
-    public MainMenu(final Main game) {
+    public MainMenu(final Main game, String currentLevel) {
         this.game = game;
 
-        currentLevel = "tiledmaps/cavern.tmx";
+        this.currentLevel = currentLevel;
 
         game.manager.load("images/pack.atlas", TextureAtlas.class);
         game.manager.setLoader(TiledMap.class, new TmxMapLoader());
-        game.manager.load(currentLevel, TiledMap.class);
+        game.manager.load(this.currentLevel, TiledMap.class);
     }
 
     @Override
@@ -33,7 +34,7 @@ public class MainMenu implements Screen {
         } else {
             ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
             game.batch.begin();
-            game.font.draw(game.batch, "Loading... " + game.manager.getProgress() * 100 + "%", 1, game.viewport.getWorldHeight() - 1);
+            game.font.draw(game.batch, "Loading... " + game.manager.getProgress() * 100 + "%", 10, Gdx.graphics.getHeight() - 10);
             game.batch.end();
         }
     }

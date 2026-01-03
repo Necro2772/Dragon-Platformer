@@ -1,10 +1,13 @@
 package io.github.dragonplatformer;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
@@ -13,15 +16,19 @@ public class Main extends Game {
     public BitmapFont font;
     public ExtendViewport viewport;
     public AssetManager manager;
+    public MainMenu menu;
 
     @Override
     public void create() {
         batch = new SpriteBatch();
         viewport = new ExtendViewport(48, 27, new OrthographicCamera());
         font = new BitmapFont();
+        font.setUseIntegerPositions(true);
+        font.getData().setScale(27f / Gdx.graphics.getHeight() * 15);
         manager = new AssetManager();
 
-        this.setScreen(new MainMenu(this));
+        menu = new MainMenu(this, "tiledmaps/hub.tmx");
+        this.setScreen(menu);
     }
 
     @Override
@@ -37,6 +44,11 @@ public class Main extends Game {
     @Override
     public void pause() {
 
+    }
+
+    public void loadNewLevel(String newLevel) {
+        menu = new MainMenu(this, "tiledmaps/" + newLevel + ".tmx");
+        this.setScreen(menu);
     }
 
     @Override
