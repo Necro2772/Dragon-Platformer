@@ -117,6 +117,21 @@ public class AnimationManager {
                         ))
                     ));
                     break;
+                case ENEMY_SPIKYLIZARD:
+                    enemyAnimations.put(key, Map.ofEntries(
+                        Map.entry(Enemy.EnemyState.IDLE, new Animation<>(
+                            1 / 2f,
+                            atlas.findRegions("spikylizard_idle"),
+                            Animation.PlayMode.LOOP
+                        )),
+                        Map.entry(Enemy.EnemyState.ATTACKING, new Animation<>(
+                            0.7f,
+                            atlas.findRegions("spikylizard_attack"),
+                            Animation.PlayMode.NORMAL
+                        ))
+                    ));
+                    break;
+
             }
         }
         return enemyAnimations.get(key);
@@ -161,8 +176,10 @@ public class AnimationManager {
         PLAYER,
         ENEMY_LIZARD,
         ENEMY_BAT,
+        ENEMY_SPIKYLIZARD,
         EFFECT_FIREBALL,
         EFFECT_CLAWSWIPE,
+        EFFECT_SLASH,
         LOOT_CRYSTAL
     }
 }

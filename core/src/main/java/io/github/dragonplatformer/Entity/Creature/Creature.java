@@ -9,10 +9,10 @@ public abstract class Creature extends Entity {
     private int groundContact;
     protected CreatureStats stats;
 
-    public Creature(float x, float y, float width, float height, World world) {
+    public Creature(float x, float y, float width, float height, Vector2 hitboxSize, World world) {
         super(x, y, width, height, world, null);
         PolygonShape collisionRec = new PolygonShape();
-        collisionRec.setAsBox(width / 2f, height / 2f);
+        collisionRec.setAsBox(hitboxSize.x, hitboxSize.y, new Vector2(0, (hitboxSize.y - height/2)), 0);
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = collisionRec;
         fixtureDef.density = 0.5f;
@@ -23,7 +23,7 @@ public abstract class Creature extends Entity {
         sensorFilter.categoryBits = GameContactListener.FilterBits.SENSOR.getBit();
         sensorFilter.maskBits = GameContactListener.FilterBits.STATIC.getBit();
         PolygonShape jumpSensorShape = new PolygonShape();
-        jumpSensorShape.setAsBox(width / 2f - 0.1f, 0.2f, new Vector2(0, -height / 2f), 0);
+        jumpSensorShape.setAsBox(hitboxSize.x / 2f - 0.1f, 0.2f, new Vector2(0, -height / 2f), 0);
         FixtureDef jumpSensorDef = new FixtureDef();
         jumpSensorDef.shape = jumpSensorShape;
         jumpSensorDef.isSensor = true;

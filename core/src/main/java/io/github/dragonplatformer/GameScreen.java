@@ -24,6 +24,7 @@ import io.github.dragonplatformer.Entity.*;
 import io.github.dragonplatformer.Entity.Creature.Bat;
 import io.github.dragonplatformer.Entity.Creature.Lizard;
 import io.github.dragonplatformer.Entity.Creature.Player;
+import io.github.dragonplatformer.Entity.Creature.SpikyLizard;
 
 
 public class GameScreen implements Screen {
@@ -110,6 +111,9 @@ public class GameScreen implements Screen {
                         break;
                     case "bat":
                         new Bat(posx, posy, 1.5f, 1.5f, world, animManager);
+                        break;
+                    case "spikylizard":
+                        new SpikyLizard(posx, posy, 6, 6, world, animManager);
                         break;
                 }
             }

@@ -6,9 +6,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import io.github.dragonplatformer.Entity.AnimationManager;
-import io.github.dragonplatformer.Entity.AttackEffect.AttackEffect;
-import io.github.dragonplatformer.Entity.AttackEffect.MeleeAttack;
-import io.github.dragonplatformer.Entity.AttackEffect.Projectile;
+import io.github.dragonplatformer.Entity.AttackEffect.*;
 import io.github.dragonplatformer.Entity.Loot.Loot;
 import io.github.dragonplatformer.GameContactListener;
 import io.github.dragonplatformer.GameScreen;
@@ -17,9 +15,8 @@ import java.util.Map;
 
 public class Player extends Creature {
     private final GameScreen screen;
+    private final AnimationManager animManager;
     private final Map<PlayerState, Animation<TextureRegion>> anims;
-    private final Map<AttackEffect.AttackState, Animation<TextureRegion>> fireballAnims;
-    private final Map<AttackEffect.AttackState, Animation<TextureRegion>> meleeAnims;
     public final playerInput input;
     private final playerStats stats;
     private PlayerState state;
@@ -27,11 +24,13 @@ public class Player extends Creature {
     private float stateTime;
 
     public Player(float x, float y, float width, float height, World world, GameScreen screen, AnimationManager animManager) {
-        super(x, y, width, height, world);
+        super(x, y, width, height, new Vector2(width/2, height/2), world);
+        this.animManager = animManager;
         this.screen = screen;
         getBody().getFixtureList().get(0).getFilterData().categoryBits = GameContactListener.FilterBits.PLAYER.getBit();
         getBody().getFixtureList().get(0).setDensity(0.225f);
         getBody().resetMassData();
+        getBody().setSleepingAllowed(false);
 
         FixtureDef itemPickupDef = new FixtureDef();
         itemPickupDef.isSensor = true;
@@ -51,8 +50,6 @@ public class Player extends Creature {
         state = PlayerState.IDLE;
 
         anims = animManager.getPlayerAnimations();
-        fireballAnims = animManager.getAttackAnims(AnimationManager.AnimationKeys.EFFECT_FIREBALL);
-        meleeAnims = animManager.getAttackAnims(AnimationManager.AnimationKeys.EFFECT_CLAWSWIPE);
     }
 
     private void updatePlayerState() {
@@ -244,7 +241,6 @@ public class Player extends Creature {
     private void beginState() {
         Vector2 vel = getBody().getLinearVelocity();
         Vector2 pos = getBody().getPosition();
-        MeleeAttack attack;
         switch(state) {
             case JUMPING:
                 getBody().applyLinearImpulse(0, getStats().jumpForce - vel.y * 1.8f, pos.x, pos.y, true);
@@ -257,31 +253,13 @@ public class Player extends Creature {
                 getBody().applyLinearImpulse(getDirection() * 30 - vel.x, 10, pos.x, pos.y, true);
                 break;
             case ATTACKUP:
-                attack = new MeleeAttack(getDirection() * 1.5f, 2, 3, 3, getBody().getWorld(), meleeAnims,
-                    (short) (GameContactListener.FilterBits.ENEMY.getBit()
-                        + GameContactListener.FilterBits.EFFECT.getBit()),
-                    GameContactListener.FilterGroup.PLAYERATTACK.getBit(),
-                    getBody());
-                attack.setDirection(getDirection());
-                attack.setRotation(0);
+                new Claw(3, 3, new Vector2(1.5f * getDirection(), 2), getDirection(), animManager, getBody());
                 break;
             case ATTACKFORWARD:
-                attack = new MeleeAttack(getDirection() * 2, 0, 3, 3, getBody().getWorld(), meleeAnims,
-                    (short) (GameContactListener.FilterBits.ENEMY.getBit()
-                        + GameContactListener.FilterBits.EFFECT.getBit()),
-                    GameContactListener.FilterGroup.PLAYERATTACK.getBit(),
-                    getBody());
-                attack.setDirection(getDirection());
-                attack.setRotation(0);
+                new Claw(3, 3, new Vector2(2 * getDirection(), 0), getDirection(), animManager, getBody());
                 break;
             case ATTACKDOWN:
-                attack = new MeleeAttack(getDirection() * 1.5f, -2, 3, 3, getBody().getWorld(), meleeAnims,
-                    (short) (GameContactListener.FilterBits.ENEMY.getBit()
-                        + GameContactListener.FilterBits.EFFECT.getBit()),
-                    GameContactListener.FilterGroup.PLAYERATTACK.getBit(),
-                    getBody());
-                attack.setDirection(getDirection());
-                attack.setRotation(0);
+                new Claw(3, 3, new Vector2(1.5f * getDirection(), -2), getDirection(), animManager, getBody());
                 break;
         }
     }
@@ -349,12 +327,8 @@ public class Player extends Creature {
     public void projectileAttack() {
         getStats().resetProjectileCD();
 
-        Projectile fireball = new Projectile(getBody().getPosition().x, getBody().getPosition().y,
-            1.5f, 1.5f, getBody().getWorld(), fireballAnims, 1,
-            (short) (GameContactListener.FilterBits.ENEMY.getBit()
-                + GameContactListener.FilterBits.STATIC.getBit()
-                + GameContactListener.FilterBits.EFFECT.getBit()),
-            GameContactListener.FilterGroup.PLAYERATTACK.getBit());
+        Projectile fireball = new Fireball(getBody().getPosition().x + getDirection() * 2, getBody().getPosition().y - 0.5f,
+            1.5f, 1.5f, getDirection(), animManager, true, getBody().getWorld());
         Vector2 impulse = new Vector2();
         impulse.x = stats.projectileSpeed * getDirection();
         if (input.upMove) impulse.y = stats.projectileSpeed * 0.5f;

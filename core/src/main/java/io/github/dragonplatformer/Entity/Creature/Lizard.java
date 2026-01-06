@@ -3,25 +3,22 @@ package io.github.dragonplatformer.Entity.Creature;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.AttackEffect.AttackEffect;
+import io.github.dragonplatformer.Entity.AttackEffect.Fireball;
 import io.github.dragonplatformer.Entity.AttackEffect.Projectile;
 import io.github.dragonplatformer.GameContactListener;
 
 import java.util.Map;
 
 public class Lizard extends Enemy {
-    private final Map<AttackEffect.AttackState, Animation<TextureRegion>> fireballAnims;
     private float attackCD;
 
     public Lizard(float x, float y, float width, float height, World world, AnimationManager animManager) {
-        super(x, y, width, height, world, animManager, AnimationManager.AnimationKeys.ENEMY_LIZARD,
+        super(x, y, width, height, new Vector2(width/2, height/2), world, animManager, AnimationManager.AnimationKeys.ENEMY_LIZARD,
             new Vector2(15, 10), false);
-        this.stats = new EnemyStats(4);
-        setStats(stats);
-        this.fireballAnims = animManager.getAttackAnims(AnimationManager.AnimationKeys.EFFECT_FIREBALL);
+        getStats().init(4);
     }
 
     @Override
@@ -38,12 +35,8 @@ public class Lizard extends Enemy {
             float posy = getBody().getPosition().y;
             Vector2 dir = new Vector2(getPlayerPos().x - posx, getPlayerPos().y - posy).nor();
             dir.scl(attackSpd);
-            Projectile fireball = new Projectile(getBody().getPosition().x, getBody().getPosition().y,
-                1, 1, getBody().getWorld(), fireballAnims, 1,
-                (short) (GameContactListener.FilterBits.PLAYER.getBit()
-                    + GameContactListener.FilterBits.STATIC.getBit()
-                    + GameContactListener.FilterBits.EFFECT.getBit()),
-                GameContactListener.FilterGroup.ENEMYATTACK.getBit());
+            Projectile fireball = new Fireball(getBody().getPosition().x, getBody().getPosition().y,
+                1, 1, getDirection(), animManager, false, getBody().getWorld());
             fireball.getBody().applyLinearImpulse(dir.x, dir.y, 0, 0, true);
             fireball.setRotation(dir.angleDeg());
         }

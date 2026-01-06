@@ -142,7 +142,12 @@
     <property name="stageexit" value="level1"/>
    </properties>
   </object>
-  <object id="9" template="../../../tiledmaps/templates/stageenter.tx" x="1550" y="2062"/>
+  <object id="9" x="1550" y="2062">
+   <properties>
+    <property name="stageenter" type="bool" value="true"/>
+   </properties>
+   <point/>
+  </object>
  </objectgroup>
  <objectgroup id="4" name="Enemies"/>
 </map>

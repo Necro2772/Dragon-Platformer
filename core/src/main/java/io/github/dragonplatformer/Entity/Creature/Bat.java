@@ -14,10 +14,9 @@ public class Bat extends Enemy {
     private float waitTime;
 
     public Bat(float x, float y, float width, float height, World world, AnimationManager animManager) {
-        super(x, y, width, height, world, animManager, AnimationManager.AnimationKeys.ENEMY_BAT,
+        super(x, y, width, height, new Vector2(width/2, height/2), world, animManager, AnimationManager.AnimationKeys.ENEMY_BAT,
             new Vector2(15, 20), true);
-        stats = new EnemyStats(2);
-        setStats(stats);
+        getStats().init(2);
         getBody().setGravityScale(0.75f);
         prevPos = 0;
         waitTime = (float) Math.random() * 2 + 1;

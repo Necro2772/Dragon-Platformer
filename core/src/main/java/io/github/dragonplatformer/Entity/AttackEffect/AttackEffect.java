@@ -3,11 +3,9 @@ package io.github.dragonplatformer.Entity.AttackEffect;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import io.github.dragonplatformer.Entity.Entity;
-import io.github.dragonplatformer.GameContactListener;
 
 import java.util.Map;
 
@@ -16,41 +14,17 @@ public abstract class AttackEffect extends Entity {
     private float stateTime;
     private AttackState state;
     private float rotation;
-    private final boolean destroyBody;
-    private final Fixture fixture;
-    private final Vector2 positionOffset;
+    private Vector2 positionOffset;
 
-    public AttackEffect(float x, float y, float width, float height, World world,
-                        Map<AttackState, Animation<TextureRegion>> anims, short maskBits, short group,
-                        Body body) {
+    public AttackEffect(float x, float y, float width, float height, int direction,
+                        Map<AttackState, Animation<TextureRegion>> anims, Body body, World world) {
         super(x, y, width, height, world, body);
-        destroyBody = (body == null);
-        PolygonShape collisionRec = new PolygonShape();
-        if (body == null) {
-            collisionRec.setAsBox(width / 2f, height / 2f);
-            positionOffset = new Vector2(0, 0);
-        }
-        else {
-            collisionRec.setAsBox(width / 2f, height / 2f, new Vector2(x, y), 0);
-            positionOffset = new Vector2(x, y);
-        }
-        FixtureDef fixtureDef = new FixtureDef();
-        fixtureDef.shape = collisionRec;
-        fixtureDef.density = 0;
-        fixtureDef.isSensor = true;
-        Filter filter = new Filter();
-        filter.categoryBits = GameContactListener.FilterBits.EFFECT.getBit();
-        filter.maskBits = maskBits;
-        filter.groupIndex = group;
-        fixture = getBody().createFixture(fixtureDef);
-        fixture.setFilterData(filter);
-        fixture.setUserData(this);
-        collisionRec.dispose();
-
+        setDirection(direction);
         this.anims = anims;
         stateTime = 0;
         state = AttackState.IDLE;
         rotation = 0;
+        positionOffset = new Vector2();
     }
 
     @Override
@@ -78,9 +52,12 @@ public abstract class AttackEffect extends Entity {
             getWidth() / 2f, getHeight() / 2f, getWidth(), getHeight(), getDirection(), 1, getRotation());
     }
 
+    public void setPositionOffset(Vector2 posOffset) {
+        this.positionOffset = posOffset;
+    }
+
     public void destroy() {
-        if (destroyBody) getBody().getWorld().destroyBody(getBody());
-        else getBody().destroyFixture(fixture);
+        getBody().getWorld().destroyBody(getBody());
     }
 
     public AttackState getState() {

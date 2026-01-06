@@ -13,8 +13,8 @@ import java.util.Map;
 
 public abstract class Enemy extends Creature {
     protected final Map<EnemyState, Animation<TextureRegion>> anims;
-    protected EnemyStats stats;
-    private final AnimationManager animManager;
+    protected final EnemyStats stats;
+    protected final AnimationManager animManager;
     private EnemyState state;
     private EnemyState bufferedState;
     private float stateTime;
@@ -22,13 +22,13 @@ public abstract class Enemy extends Creature {
     private boolean playerInRange;
     private Vector2 playerPos;
     private Vector2 spawnPoint;
-    private PlayerLOSRay losRay;
+    private final PlayerLOSRay losRay;
     private float aggroRange;
 
-    public Enemy(float x, float y, float width, float height, World world,
+    public Enemy(float x, float y, float width, float height, Vector2 hitboxSize, World world,
                  AnimationManager animManager, AnimationManager.AnimationKeys animKey,
                  Vector2 playerSensorHalfSize, boolean isFlying) {
-        super(x, y, width, height, world);
+        super(x, y, width, height, hitboxSize, world);
         getBody().getFixtureList().get(0).getFilterData().categoryBits = GameContactListener.FilterBits.ENEMY.getBit();
         getBody().getFixtureList().get(0).getFilterData().groupIndex = GameContactListener.FilterGroup.ENEMYATTACK.getBit();
 
@@ -55,6 +55,8 @@ public abstract class Enemy extends Creature {
         updatePlayerPos(new Vector2(0,0));
         losRay = new PlayerLOSRay();
         aggroRange = playerSensorHalfSize.x * 2;
+        stats = new EnemyStats(1);
+        this.setStats(stats);
     }
 
     @Override
@@ -72,6 +74,10 @@ public abstract class Enemy extends Creature {
             if (getBody().getPosition().dst(playerPos) > aggroRange) playerSighted = false;
         }
         stats.updateCooldowns(delta);
+        if (playerSighted) {
+            if (getBody().getPosition().x < getPlayerPos().x) setDirection(1);
+            else setDirection(-1);
+        }
     }
 
     public void setAggroRange(float aggroRange) {
@@ -129,9 +135,11 @@ public abstract class Enemy extends Creature {
                 return;
             }
             else if (getBufferedState() != null) {
+                endState();
                 state = getBufferedState();
                 bufferedState = null;
                 stateTime = 0;
+                beginState();
             }
         }
         TextureRegion frame = anims.get(getState()).getKeyFrame(getStateTime());
@@ -243,8 +251,13 @@ public abstract class Enemy extends Creature {
 
     public static class EnemyStats extends CreatureStats {
         public float hitTimer = 0;
-        public EnemyStats(int maxHealth) {
+        private EnemyStats(int maxHealth) {
             super(maxHealth);
+        }
+
+        public void init(int maxHealth) {
+            this.setMaxHealth(maxHealth);
+            setHealth(getMaxHealth());
         }
 
         public void updateCooldowns(float delta) {
