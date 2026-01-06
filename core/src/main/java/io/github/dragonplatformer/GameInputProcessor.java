@@ -2,13 +2,15 @@ package io.github.dragonplatformer;
 
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
-import io.github.dragonplatformer.Entity.Player;
+import io.github.dragonplatformer.Entity.Creature.Player;
 
 public class GameInputProcessor implements InputProcessor {
-    Player player;
-    public GameInputProcessor(Player player) {
+    private final Player player;
+    private final GameScreen screen;
+    public GameInputProcessor(Player player, GameScreen screen) {
         super();
         this.player = player;
+        this.screen = screen;
     }
 
     @Override
@@ -39,6 +41,9 @@ public class GameInputProcessor implements InputProcessor {
             case Input.Keys.E:
                 player.input.setProjectile(true);
                 break;
+            case Input.Keys.B:
+                screen.setDebug(true);
+                break;
         }
         return false;
     }
@@ -67,6 +72,9 @@ public class GameInputProcessor implements InputProcessor {
                 break;
             case Input.Keys.E:
                 player.input.setProjectile(false);
+                break;
+            case Input.Keys.B:
+                screen.setDebug(false);
                 break;
         }
         return false;

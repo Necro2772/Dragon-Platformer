@@ -4,14 +4,14 @@ size: 1024, 512
 format: RGBA8888
 filter: Nearest, Nearest
 repeat: none
-clawswipe
+bat_idle
   rotate: false
   xy: 2, 36
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: 0
-clawswipe
+bat_idle
   rotate: false
   xy: 652, 296
   size: 64, 64
@@ -24,7 +24,28 @@ clawswipe
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
+  index: 0
+clawswipe
+  rotate: false
+  xy: 68, 36
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 1
+clawswipe
+  rotate: false
+  xy: 652, 230
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
   index: 2
+crystalshard
+  rotate: false
+  xy: 200, 84
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: -1
 dragon_attackdown
   rotate: false
   xy: 2, 362
@@ -167,35 +188,35 @@ fireball
   index: 2
 lizard_attack
   rotate: false
-  xy: 68, 36
+  xy: 848, 426
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: 0
 lizard_idle
   rotate: false
-  xy: 68, 36
+  xy: 848, 426
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: 0
 lizard_attack
   rotate: false
-  xy: 652, 230
+  xy: 134, 36
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: 1
 lizard_attack
   rotate: false
-  xy: 848, 426
+  xy: 652, 164
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: 2
 lizard_idle
   rotate: false
-  xy: 134, 36
+  xy: 914, 426
   size: 64, 64
   orig: 64, 64
   offset: 0, 0

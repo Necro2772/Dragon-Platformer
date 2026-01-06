@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="100" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="4" nextobjectid="11">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="100" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="5" nextobjectid="19">
  <tileset firstgid="1" name="cave-tiles" tilewidth="32" tileheight="32" spacing="2" margin="1" tilecount="256" columns="16">
   <image source="../../../tiledmaps/tilesets/cave-tiles-extruded.png" width="544" height="544"/>
   <wangsets>
@@ -20,6 +20,9 @@
     <wangtile tileid="36" wangid="0,1,0,1,0,1,0,0"/>
    </wangset>
   </wangsets>
+ </tileset>
+ <tileset firstgid="257" name="bat_idle_0" tilewidth="64" tileheight="64" tilecount="1" columns="1">
+  <image source="../../../tiledmaps/tilesets/bat_idle_0.png" width="64" height="64"/>
  </tileset>
  <layer id="1" name="Terrain" width="100" height="100">
   <data encoding="csv">
@@ -141,4 +144,5 @@
   </object>
   <object id="9" template="../../../tiledmaps/templates/stageenter.tx" x="1550" y="2062"/>
  </objectgroup>
+ <objectgroup id="4" name="Enemies"/>
 </map>

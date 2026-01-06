@@ -46,6 +46,7 @@ public class GameContactListener implements ContactListener {
     }
 
     public enum FilterGroup {
+        LOOT ((short) -3),
         ENEMYATTACK ((short) -2),
         PLAYERATTACK ((short) -1);
 
@@ -65,7 +66,8 @@ public class GameContactListener implements ContactListener {
         SENSOR ((short) 2),
         PLAYER ((short) 4),
         ENEMY ((short) 8),
-        EFFECT ((short) 16);
+        EFFECT ((short) 16),
+        LOOT ((short) 32);
 
         final short categoryBit;
 

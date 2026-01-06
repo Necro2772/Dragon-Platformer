@@ -1,14 +1,15 @@
-package io.github.dragonplatformer.Entity;
+package io.github.dragonplatformer.Entity.Creature;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.AttackEffect.AttackEffect;
 import io.github.dragonplatformer.Entity.AttackEffect.MeleeAttack;
 import io.github.dragonplatformer.Entity.AttackEffect.Projectile;
+import io.github.dragonplatformer.Entity.Loot.Loot;
 import io.github.dragonplatformer.GameContactListener;
 import io.github.dragonplatformer.GameScreen;
 
@@ -25,81 +26,33 @@ public class Player extends Creature {
     private PlayerState bufferedState;
     private float stateTime;
 
-    public Player(TextureAtlas atlas, float x, float y, float width, float height, World world, GameScreen screen) {
+    public Player(float x, float y, float width, float height, World world, GameScreen screen, AnimationManager animManager) {
         super(x, y, width, height, world);
         this.screen = screen;
         getBody().getFixtureList().get(0).getFilterData().categoryBits = GameContactListener.FilterBits.PLAYER.getBit();
         getBody().getFixtureList().get(0).setDensity(0.225f);
         getBody().resetMassData();
+
+        FixtureDef itemPickupDef = new FixtureDef();
+        itemPickupDef.isSensor = true;
+        CircleShape itemPickupShape = new CircleShape();
+        itemPickupShape.setRadius(15);
+        itemPickupDef.shape = itemPickupShape;
+        Fixture itemPickupFixture = getBody().createFixture(itemPickupDef);
+        itemPickupFixture.setUserData(this);
+        itemPickupFixture.getFilterData().categoryBits = GameContactListener.FilterBits.SENSOR.getBit();
+        itemPickupFixture.getFilterData().maskBits = GameContactListener.FilterBits.LOOT.getBit();
+        itemPickupShape.dispose();
+
         stateTime = 0;
         input = new playerInput(this);
         stats = new playerStats();
+        setStats(stats);
         state = PlayerState.IDLE;
 
-        anims = Map.ofEntries(
-            Map.entry(PlayerState.IDLE, new Animation<>(
-                1/3f,
-                atlas.findRegions("dragon_idle"),
-                Animation.PlayMode.NORMAL
-            )), Map.entry(PlayerState.RUNNING, new Animation<>(
-                1/3f,
-                atlas.findRegions("dragon_run"),
-                Animation.PlayMode.LOOP_PINGPONG
-            )), Map.entry(PlayerState.JUMPING, new Animation<>(
-                1/5f,
-                atlas.findRegions("dragon_flap"),
-                Animation.PlayMode.LOOP
-            )), Map.entry(PlayerState.FLYING, new Animation<>(
-                1/5f,
-                atlas.findRegions("dragon_fly"),
-                Animation.PlayMode.LOOP
-            )), Map.entry(PlayerState.GLIDING, new Animation<>(
-                1/3f,
-                atlas.findRegions("dragon_glide"),
-                Animation.PlayMode.LOOP
-            )), Map.entry(PlayerState.DIVING, new Animation<>(
-                1/3f,
-                atlas.findRegions("dragon_dive"),
-                Animation.PlayMode.LOOP
-            )), Map.entry(PlayerState.DIVESOAR, new Animation<>(
-                1/3f,
-                atlas.findRegions("dragon_divesoar"),
-                Animation.PlayMode.LOOP
-            )), Map.entry(PlayerState.DASH, new Animation<>(
-                1/3f,
-                atlas.findRegions("dragon_dash"),
-                Animation.PlayMode.LOOP
-            )), Map.entry(PlayerState.DASHDIVE, new Animation<>(
-                1/3f,
-                atlas.findRegions("dragon_dive"),
-                Animation.PlayMode.LOOP
-            )), Map.entry(PlayerState.ATTACKFORWARD, new Animation<>(
-                1/4f,
-                atlas.findRegions("dragon_attackforward"),
-                Animation.PlayMode.NORMAL
-            )), Map.entry(PlayerState.ATTACKDOWN, new Animation<>(
-                1/4f,
-                atlas.findRegions("dragon_attackdown"),
-                Animation.PlayMode.NORMAL
-            )), Map.entry(PlayerState.ATTACKUP, new Animation<>(
-                1/4f,
-                atlas.findRegions("dragon_attackup"),
-                Animation.PlayMode.NORMAL
-            ))
-        );
-
-        fireballAnims = Map.ofEntries(Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
-                1/3f,
-                atlas.findRegions("fireball"),
-                Animation.PlayMode.LOOP
-            ))
-        );
-
-        meleeAnims = Map.ofEntries(Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
-            1/12f,
-            atlas.findRegions("clawswipe"),
-            Animation.PlayMode.NORMAL
-        )));
+        anims = animManager.getPlayerAnimations();
+        fireballAnims = animManager.getAttackAnims(AnimationManager.AnimationKeys.EFFECT_FIREBALL);
+        meleeAnims = animManager.getAttackAnims(AnimationManager.AnimationKeys.EFFECT_CLAWSWIPE);
     }
 
     private void updatePlayerState() {
@@ -192,14 +145,14 @@ public class Player extends Creature {
                     break;
             }
         }
-        if (getInput().rightMove && vel.x < maxVelocity) {
+        if (getInput().getInputDirection() == 1 && vel.x < maxVelocity) {
             getBody().applyLinearImpulse(speed, 0, pos.x, pos.y, true);
-        } else if (getInput().leftMove && vel.x > -maxVelocity) {
+        } else if (getInput().getInputDirection() == -1 && vel.x > -maxVelocity) {
             getBody().applyLinearImpulse(-speed, 0, pos.x, pos.y, true);
-        } else if (!getInput().leftMove && !getInput().rightMove && vel.x != 0) {
+        } else if (getInput().getInputDirection() == 0 && vel.x != 0) {
             getBody().applyLinearImpulse(-vel.x / 20, 0, pos.x, pos.y, true);
         }
-        if (isGrounded() && Math.abs(vel.x) > 1 && !getInput().rightMove && !getInput().leftMove) {
+        if (isGrounded() && Math.abs(vel.x) > 1 && getInput().getInputDirection() == 0) {
             getBody().applyLinearImpulse(-vel.x / 8, 0, pos.x, pos.y, true);
         }
         if (getInput().jump) input.setJump(false);
@@ -207,6 +160,10 @@ public class Player extends Creature {
 
     @Override
     public void act(float delta) {
+        if (getStats().getHealth() <= 0) {
+            death();
+            return;
+        }
         getStats().updateCooldowns(delta);
         updatePlayerState();
         updatePlayerMovement(delta);
@@ -219,23 +176,48 @@ public class Player extends Creature {
     @Override
     public void beginContact(Fixture entityFixture, Fixture contactFixture) {
         super.beginContact(entityFixture, contactFixture);
-        if (getBody().getFixtureList().indexOf(entityFixture, true) == 1) {
+        if (getBody().getFixtureList().indexOf(entityFixture, true) == 1) { // Jump sensor
             getInput().numJumps = getStats().getMaxJumps();
+        } else if (getBody().getFixtureList().indexOf(entityFixture, true) == 0) { // Player collision
+            if (contactFixture.getUserData() instanceof Enemy) {
+                Enemy e = (Enemy) contactFixture.getUserData();
+                if (e.getState() != Enemy.EnemyState.DEATH && e.stats.hitTimer <= 0) {
+                    damage(1, e.getBody().getPosition());
+                }
+            } else if (contactFixture.getUserData() instanceof Loot) {
+                Loot loot = (Loot) contactFixture.getUserData();
+                if (!loot.isLooted()) {
+                    loot(loot);
+                    loot.setLooted();
+                }
+            }
+        } else if (getBody().getFixtureList().indexOf(entityFixture, true) == 2) { // Item pickup sensor
+            Loot item = (Loot) contactFixture.getUserData();
+            item.moveToPlayer(getBody().getPosition());
         }
     }
 
     @Override
     public void endContact(Fixture entityFixture, Fixture contactFixture) {
         super.endContact(entityFixture, contactFixture);
+        if (getBody().getFixtureList().indexOf(entityFixture, true) == 2) {
+            Loot item = (Loot) contactFixture.getUserData();
+            item.stopMove();
+        }
     }
 
     @Override
     public void draw(SpriteBatch batch, float delta) {
         stateTime = stateTime + delta;
-        if (bufferedState != null && anims.get(getState()).isAnimationFinished(getStateTime())) {
-            state = bufferedState;
-            bufferedState = null;
-            stateTime = 0;
+        if (anims.get(getState()).isAnimationFinished(getStateTime())) {
+            if (getState() == PlayerState.DEATH) {
+                death();
+                return;
+            } else if (bufferedState != null) {
+                state = bufferedState;
+                bufferedState = null;
+                stateTime = 0;
+            }
         }
         TextureRegion frame = anims.get(getState()).getKeyFrame(getStateTime());
         batch.draw(frame,
@@ -246,11 +228,8 @@ public class Player extends Creature {
 
     @Override
     public void damage(int attackDamage, Vector2 attackOrigin) {
-        super.damage(attackDamage, attackOrigin);
-        if (attackOrigin.x - getBody().getPosition().x < 0) {
-            getBody().applyLinearImpulse(new Vector2(10, 10), getBody().getPosition(), true);
-        } else {
-            getBody().applyLinearImpulse(new Vector2(-10, 10), getBody().getPosition(), true);
+        if (super.damage(attackDamage, attackOrigin, 20)) {
+            stats.setInvulnerability(1);
         }
     }
 
@@ -304,6 +283,12 @@ public class Player extends Creature {
                 attack.setDirection(getDirection());
                 attack.setRotation(0);
                 break;
+        }
+    }
+
+    public void loot(Loot item) {
+        if (item.type == Loot.LootType.CRYSTAL) {
+            stats.addCrystals(item.value);
         }
     }
 
@@ -363,7 +348,6 @@ public class Player extends Creature {
 
     public void projectileAttack() {
         getStats().resetProjectileCD();
-        float projSpeed = 15f;
 
         Projectile fireball = new Projectile(getBody().getPosition().x, getBody().getPosition().y,
             1.5f, 1.5f, getBody().getWorld(), fireballAnims, 1,
@@ -372,9 +356,9 @@ public class Player extends Creature {
                 + GameContactListener.FilterBits.EFFECT.getBit()),
             GameContactListener.FilterGroup.PLAYERATTACK.getBit());
         Vector2 impulse = new Vector2();
-        impulse.x = projSpeed * getDirection();
-        if (input.upMove) impulse.y = projSpeed * 0.5f;
-        else if (input.downMove) impulse.y = -projSpeed * 0.5f;
+        impulse.x = stats.projectileSpeed * getDirection();
+        if (input.upMove) impulse.y = stats.projectileSpeed * 0.5f;
+        else if (input.downMove) impulse.y = -stats.projectileSpeed * 0.5f;
         fireball.getBody().applyLinearImpulse(impulse, new Vector2(0, 0), true);
         fireball.setDirection(getDirection());
     }
@@ -391,7 +375,8 @@ public class Player extends Creature {
         DASHDIVE,
         ATTACKFORWARD,
         ATTACKUP,
-        ATTACKDOWN
+        ATTACKDOWN,
+        DEATH
     }
 
     public static class playerInput {
@@ -419,16 +404,21 @@ public class Player extends Creature {
             diveTimer = 0;
         }
 
+        public int getInputDirection() {
+            if (!leftMove && !rightMove) return 0;
+            return player.getDirection();
+        }
+
         public void setLeftMove(boolean leftMove) {
-            if (rightMove && leftMove) rightMove = false;
             this.leftMove = leftMove;
             if (leftMove) player.setDirection(-1);
+            else if (rightMove) player.setDirection(1);
         }
 
         public void setRightMove(boolean rightMove) {
-            if (leftMove && rightMove) leftMove = false;
             this.rightMove = rightMove;
             if (rightMove) player.setDirection(1);
+            else if (leftMove) player.setDirection(-1);
         }
 
         public void setDownMove(boolean downMove) {
@@ -458,21 +448,26 @@ public class Player extends Creature {
         }
     }
 
-    public class playerStats extends CreatureStats {
+    public static class playerStats extends CreatureStats {
         private int maxJumps;
-        private float projectileMaxCD;
+        private float projectileMaxCD = 0.7f;
         private float projectileCD;
+        public float projectileSpeed = 25;
         public float jumpForce = 30;
+        private int crystals;
 
         public playerStats() {
             super(10);
             setMaxJumps(4);
-            setProjectileMaxCD(0.3f);
+            setProjectileMaxCD(0.7f);
             setProjectileCD(getProjectileMaxCD());
+            crystals = 0;
         }
 
+        @Override
         public void updateCooldowns(float delta) {
-            if(getProjectileCD() > 0) setProjectileCD(getProjectileCD() - delta);
+            super.updateCooldowns(delta);
+            if (getProjectileCD() > 0) setProjectileCD(getProjectileCD() - delta);
         }
 
         public void resetProjectileCD() {
@@ -502,5 +497,14 @@ public class Player extends Creature {
         public void setProjectileCD(float projectileCD) {
             this.projectileCD = projectileCD;
         }
+
+        public void addCrystals(int newCrystals) {
+            this.crystals += newCrystals;
+        }
+
+        public int getCrystals() {
+            return this.crystals;
+        }
+
     }
 }

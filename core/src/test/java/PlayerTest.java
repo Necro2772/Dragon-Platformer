@@ -2,7 +2,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.headless.HeadlessApplication;
 import com.badlogic.gdx.backends.headless.HeadlessApplicationConfiguration;
 import com.badlogic.gdx.graphics.GL20;
-import io.github.dragonplatformer.Entity.Player;
+import io.github.dragonplatformer.Entity.Creature.Player;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,7 +20,7 @@ public class PlayerTest {
         application = new GameHeadlessApplication();
         new HeadlessApplication(application, config);
         application.create();
-        while (application.player == null) {
+        while (application.screen == null) {
             Assertions.assertDoesNotThrow(() -> application.render());
         }
     }
@@ -28,8 +28,8 @@ public class PlayerTest {
     @Test
     public void setStateTest() {
         for (Player.PlayerState state : Player.PlayerState.values()) {
-            application.player.setState(state);
-            Assertions.assertNotNull(application.player.getCurrentAnim(), "Failed to find an animation for player state: " + state);
+            application.screen.getPlayer().setState(state);
+            Assertions.assertNotNull(application.screen.getPlayer().getCurrentAnim(), "Failed to find an animation for player state: " + state);
         }
     }
 }

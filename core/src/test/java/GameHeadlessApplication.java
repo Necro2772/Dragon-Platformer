@@ -1,14 +1,21 @@
-import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.physics.box2d.World;
-import io.github.dragonplatformer.Entity.Player;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
+import io.github.dragonplatformer.Entity.Creature.Player;
+import io.github.dragonplatformer.GameScreen;
+import io.github.dragonplatformer.Main;
 
-public class GameHeadlessApplication extends Game {
+public class GameHeadlessApplication extends Main {
+
     public Player player;
     public World world;
-    public AssetManager assets;
+    public GameScreen screen;
 
     public GameHeadlessApplication() {
         super();
@@ -16,8 +23,15 @@ public class GameHeadlessApplication extends Game {
 
     @Override
     public void create() {
-        assets = new AssetManager();
-        assets.load("images/pack.atlas", TextureAtlas.class);
+        batch = null;
+        viewport = new ExtendViewport(48, 27, new OrthographicCamera());
+        font = new BitmapFont();
+        font.setUseIntegerPositions(true);
+        font.getData().setScale(27f / Gdx.graphics.getHeight() * 15);
+        manager = new AssetManager();
+        manager.load("images/pack.atlas", TextureAtlas.class);
+        manager.setLoader(TiledMap.class, new TmxMapLoader());
+        manager.load("tiledmaps/hub.tmx", TiledMap.class);
     }
 
     @Override
@@ -27,10 +41,9 @@ public class GameHeadlessApplication extends Game {
 
     @Override
     public void render() {
-        if (assets.update()) {
-            TextureAtlas atlas = assets.get("images/pack.atlas", TextureAtlas.class);
-            world = new World(new Vector2(0, 9.8f), true);
-            player = new Player(atlas, 2, 2, 1, 1, world, null);
+        if (manager.update()) {
+            screen = new GameScreen(this, manager.get("tiledmaps/hub.tmx"));
+            setScreen(screen);
         }
 
     }

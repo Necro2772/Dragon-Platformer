@@ -1,8 +1,8 @@
 package io.github.dragonplatformer.Entity;
 
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.physics.box2d.*;
+import io.github.dragonplatformer.Entity.Creature.Player;
 import io.github.dragonplatformer.GameContactListener;
 import io.github.dragonplatformer.GameScreen;
 

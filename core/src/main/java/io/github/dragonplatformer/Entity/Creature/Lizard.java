@@ -1,10 +1,11 @@
-package io.github.dragonplatformer.Entity;
+package io.github.dragonplatformer.Entity.Creature;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.badlogic.gdx.physics.box2d.World;
+import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.AttackEffect.AttackEffect;
 import io.github.dragonplatformer.Entity.AttackEffect.Projectile;
 import io.github.dragonplatformer.GameContactListener;
@@ -15,33 +16,17 @@ public class Lizard extends Enemy {
     private final Map<AttackEffect.AttackState, Animation<TextureRegion>> fireballAnims;
     private float attackCD;
 
-    public Lizard(TextureAtlas atlas, float x, float y, float width, float height, World world) {
-        super(x, y, width, height, world, Map.ofEntries(
-            Map.entry(EnemyState.IDLE, new Animation<>(
-                1/3f,
-                atlas.findRegions("lizard_idle"),
-                Animation.PlayMode.LOOP
-                )),
-            Map.entry(EnemyState.ATTACKING, new Animation<>(
-                1/6f,
-                atlas.findRegions("lizard_attack"),
-                Animation.PlayMode.NORMAL
-            ))
-            )
-        );
-        stats = new LizardStats();
-
-        fireballAnims = Map.ofEntries(Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
-                1/3f,
-                atlas.findRegions("fireball"),
-                Animation.PlayMode.LOOP
-            ))
-        );
-
+    public Lizard(float x, float y, float width, float height, World world, AnimationManager animManager) {
+        super(x, y, width, height, world, animManager, AnimationManager.AnimationKeys.ENEMY_LIZARD,
+            new Vector2(15, 10), false);
+        this.stats = new EnemyStats(4);
+        setStats(stats);
+        this.fireballAnims = animManager.getAttackAnims(AnimationManager.AnimationKeys.EFFECT_FIREBALL);
     }
 
     @Override
     public void act(float delta) {
+        super.act(delta);
         int attackSpd = 15;
         float attackMaxCD = 1.5f;
 
@@ -64,9 +49,9 @@ public class Lizard extends Enemy {
         }
     }
 
-    public class LizardStats extends EnemyStats {
-        LizardStats() {
-            super(1);
-        }
-    }
+//    public class LizardStats extends EnemyStats {
+//        LizardStats() {
+//            super(2);
+//        }
+//    }
 }

@@ -12,7 +12,6 @@ import com.badlogic.gdx.maps.objects.EllipseMapObject;
 import com.badlogic.gdx.maps.objects.PolygonMapObject;
 import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
-import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.*;
 import com.badlogic.gdx.physics.box2d.*;
@@ -21,31 +20,45 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
-import io.github.dragonplatformer.Entity.Entity;
-import io.github.dragonplatformer.Entity.Lizard;
-import io.github.dragonplatformer.Entity.Player;
-import io.github.dragonplatformer.Entity.Portal;
+import io.github.dragonplatformer.Entity.*;
+import io.github.dragonplatformer.Entity.Creature.Bat;
+import io.github.dragonplatformer.Entity.Creature.Lizard;
+import io.github.dragonplatformer.Entity.Creature.Player;
+
 
 public class GameScreen implements Screen {
     private final Main game;
 
     private final Stage uiStage;
     private final World world;
-    private final TextureAtlas atlas;
     private final Box2DDebugRenderer debugRenderer;
     private final Player player;
     private final TiledMap map;
     private final OrthogonalTiledMapRenderer tiledMapRenderer;
     private final Label debugInfo;
     private final Array<Body> bodies;
+    private final AnimationManager animManager;
+    private boolean debug;
 
     public GameScreen(final Main game, final TiledMap map) {
         this.game = game;
-        uiStage = new Stage(new ScreenViewport());
-        world = new World(new Vector2(0, -9.8f), true);
-        atlas = game.manager.get("images/pack.atlas");
-        debugRenderer = new Box2DDebugRenderer();
+        TextureAtlas atlas = game.manager.get("images/pack.atlas");
+        animManager = new AnimationManager(atlas);
         bodies = new Array<>();
+        world = new World(new Vector2(0, -9.8f), true);
+        debug = false;
+        if (game.batch == null) { // Debug setup if rendering won't work
+            uiStage = null;
+            debugRenderer = null;
+            this.map = map;
+            tiledMapRenderer = null;
+            debugInfo = null;
+            player = new Player(0, 0, 3, 3, world, this, animManager);
+            return;
+        }
+        uiStage = new Stage(new ScreenViewport());
+        debugRenderer = new Box2DDebugRenderer();
+        debugRenderer.setDrawBodies(false);
 
         // Tilemap loading
         this.map = map;
@@ -69,7 +82,7 @@ public class GameScreen implements Screen {
                 new Portal(x, y, width, height, world, (String) properties.get("stageexit"), this);
             }
         }
-        player = new Player(atlas, playerx, playery, 3, 3, world, this);
+        player = new Player(playerx, playery, 3, 3, world, this, animManager);
         loadTilemapData();
 
         Label.LabelStyle style = new Label.LabelStyle();
@@ -78,7 +91,7 @@ public class GameScreen implements Screen {
         uiStage.addActor(debugInfo);
 
         world.setContactListener(new GameContactListener());
-        GameInputProcessor gameInputProcessor = new GameInputProcessor(player);
+        GameInputProcessor gameInputProcessor = new GameInputProcessor(player, this);
         Gdx.input.setInputProcessor(gameInputProcessor);
 
     }
@@ -93,7 +106,10 @@ public class GameScreen implements Screen {
                 String type = (String) enemy.getProperties().get("type");
                 switch (type) {
                     case "lizard":
-                        new Lizard(atlas, posx, posy, 2, 2, world);
+                        new Lizard(posx, posy, 2, 2, world, animManager);
+                        break;
+                    case "bat":
+                        new Bat(posx, posy, 1.5f, 1.5f, world, animManager);
                         break;
                 }
             }
@@ -207,18 +223,20 @@ public class GameScreen implements Screen {
 
         uiStage.act(Gdx.graphics.getDeltaTime());
         debugInfo.setText(String.format(
-            "Player State: %s%n" +
+            "%n%nPlayer State: %s%n" +
                 "State Time: %.2f%n" +
                 "Jumps: %d%n" +
-                "Health: %d",
+                "Health: %d%n" +
+                "Crystals: %d",
             player.getState(), player.getStateTime(), player.getInput().numJumps,
-            player.getStats().getHealth()
+            player.getStats().getHealth(), player.getStats().getCrystals()
             ));
         uiStage.draw();
     }
 
     @Override
     public void resize(int width, int height) {
+        if (game.batch == null) return;
         game.viewport.update(width, height);
         uiStage.getViewport().update(width, height, true);
         debugInfo.setPosition(10, height - debugInfo.getHeight() - 20);
@@ -245,4 +263,12 @@ public class GameScreen implements Screen {
         uiStage.dispose();
     }
 
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+        if (debug) debugRenderer.setDrawBodies(!debugRenderer.isDrawBodies());
+    }
+
+    public Player getPlayer() {
+        return player;
+    }
 }
