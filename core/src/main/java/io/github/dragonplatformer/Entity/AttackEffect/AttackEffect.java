@@ -15,10 +15,12 @@ public abstract class AttackEffect extends Entity {
     private AttackState state;
     private float rotation;
     private Vector2 positionOffset;
+    private final float damage;
 
-    public AttackEffect(float x, float y, float width, float height, int direction,
+    public AttackEffect(float damage, float x, float y, float width, float height, int direction,
                         Map<AttackState, Animation<TextureRegion>> anims, Body body, World world) {
         super(x, y, width, height, world, body);
+        this.damage = damage;
         setDirection(direction);
         this.anims = anims;
         stateTime = 0;
@@ -37,6 +39,10 @@ public abstract class AttackEffect extends Entity {
     @Override
     public void draw(SpriteBatch batch, float delta) {
         stateTime = stateTime + delta;
+        if (anims.get(getState()) == null) {
+            destroy();
+            return;
+        }
         if (anims.get(getState()).getPlayMode() == Animation.PlayMode.NORMAL
             && anims.get(getState()).isAnimationFinished(getStateTime())) {
             setState(AttackState.DESTROYED);
@@ -78,6 +84,10 @@ public abstract class AttackEffect extends Entity {
 
     public float getRotation() {
         return rotation;
+    }
+
+    public float getDamage() {
+        return damage;
     }
 
     public enum AttackState {

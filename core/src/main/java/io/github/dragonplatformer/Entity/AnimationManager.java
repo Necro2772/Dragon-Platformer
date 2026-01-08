@@ -38,7 +38,7 @@ public class AnimationManager {
                     atlas.findRegions("dragon_run"),
                     Animation.PlayMode.LOOP_PINGPONG
                 )), Map.entry(Player.PlayerState.JUMPING, new Animation<>(
-                    1/5f,
+                    1/9f,
                     atlas.findRegions("dragon_flap"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(Player.PlayerState.FLYING, new Animation<>(
@@ -66,19 +66,27 @@ public class AnimationManager {
                     atlas.findRegions("dragon_dive"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(Player.PlayerState.ATTACKFORWARD, new Animation<>(
-                    1/4f,
+                    1/3f,
                     atlas.findRegions("dragon_attackforward"),
                     Animation.PlayMode.NORMAL
+                )), Map.entry(Player.PlayerState.ATTACKFORWARD2, new Animation<>(
+                    1/3f,
+                    atlas.findRegions("dragon_attackforward2"),
+                    Animation.PlayMode.NORMAL
+                )), Map.entry(Player.PlayerState.ATTACKFORWARD3, new Animation<>(
+                    1/3f,
+                    atlas.findRegions("dragon_attackforward3"),
+                    Animation.PlayMode.NORMAL
                 )), Map.entry(Player.PlayerState.ATTACKDOWN, new Animation<>(
-                    1/4f,
+                    1/2f,
                     atlas.findRegions("dragon_attackdown"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(Player.PlayerState.ATTACKUP, new Animation<>(
-                    1/4f,
+                    1/2f,
                     atlas.findRegions("dragon_attackup"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(Player.PlayerState.DEATH, new Animation<>(
-                    1/4f,
+                    1/2f,
                     atlas.findRegions("dragon_jump"),
                     Animation.PlayMode.NORMAL
                 ))
@@ -154,6 +162,14 @@ public class AnimationManager {
                         1/12f,
                         atlas.findRegions("clawswipe"),
                         Animation.PlayMode.NORMAL))
+                    ));
+                    break;
+                case EFFECT_SLASH:
+                    effectAnimations.put(key, Map.ofEntries(
+                        Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
+                            1/12f,
+                            atlas.findRegions("sweep"),
+                            Animation.PlayMode.NORMAL))
                     ));
                     break;
             }

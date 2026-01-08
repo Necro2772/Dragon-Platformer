@@ -53,7 +53,7 @@ public abstract class Creature extends Entity {
         return groundContact > 0;
     }
 
-    public boolean damage(int attackDamage, Vector2 attackOrigin, float knockback) {
+    public boolean damage(float attackDamage, Vector2 attackOrigin, float knockback) {
         if (!stats.getInvulnerable()) {
             getStats().setHealth(getStats().getHealth() - attackDamage);
             getBody().applyLinearImpulse(getBody().getLinearVelocity().scl(-1), getBody().getPosition(), true);
@@ -67,7 +67,7 @@ public abstract class Creature extends Entity {
         return false;
     }
 
-    public abstract void damage(int attackDamage, Vector2 attackOrigin);
+    public abstract void damage(float attackDamage, Vector2 attackOrigin);
 
     public abstract void death();
 
@@ -77,8 +77,8 @@ public abstract class Creature extends Entity {
 
 
     public abstract static class CreatureStats {
-        private int maxHealth;
-        private int health;
+        private float maxHealth;
+        private float health;
         private float invulnerability;
 
         public CreatureStats(int maxHealth) {
@@ -91,19 +91,19 @@ public abstract class Creature extends Entity {
             if (getInvulnerable()) setInvulnerability(invulnerability - delta);
         }
 
-        public int getMaxHealth() {
+        public float getMaxHealth() {
             return maxHealth;
         }
 
-        public void setMaxHealth(int maxHealth) {
+        public void setMaxHealth(float maxHealth) {
             this.maxHealth = maxHealth;
         }
 
-        public int getHealth() {
+        public float getHealth() {
             return health;
         }
 
-        public void setHealth(int health) {
+        public void setHealth(float health) {
             this.health = Math.min(health, getMaxHealth());
         }
 
