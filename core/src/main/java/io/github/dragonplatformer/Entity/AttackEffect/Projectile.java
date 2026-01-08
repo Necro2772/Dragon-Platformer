@@ -10,10 +10,12 @@ import io.github.dragonplatformer.GameContactListener;
 import java.util.Map;
 
 public abstract class Projectile extends AttackEffect {
+    private float health;
 
-    public Projectile(float x, float y, float width, float height, int direction,
+    public Projectile(float damage, float health, float x, float y, float width, float height, int direction,
                       Map<AttackState, Animation<TextureRegion>> anims, boolean isPlayer, World world) {
-        super(x, y, width, height, direction, anims, null, world);
+        super(damage, x, y, width, height, direction, anims, null, world);
+        this.health = health;
         PolygonShape fixtureShape = new PolygonShape();
         fixtureShape.setAsBox(width / 2f, height / 2f, new Vector2(), 0);
         FixtureDef fixtureDef = new FixtureDef();
@@ -41,12 +43,24 @@ public abstract class Projectile extends AttackEffect {
     }
 
     @Override
+    public void act(float delta) {
+        super.act(delta);
+        if (this.health <= 0) setState(AttackState.DESTROYED);
+    }
+
+    @Override
     public void beginContact(Fixture entityFixture, Fixture contactFixture) {
         if (contactFixture.getUserData() instanceof Creature) {
             Creature creature = ((Creature) contactFixture.getBody().getUserData());
-            creature.damage(1, getBody().getPosition());
+            creature.damage(getDamage(), getBody().getPosition());
+            this.health = 0;
+        } else if (contactFixture.getUserData() instanceof Projectile) {
+            Projectile collideProjectile = (Projectile) contactFixture.getUserData();
+            collideProjectile.health -= this.health;
+            this.health -= collideProjectile.health;
+        } else {
+            this.health = 0;
         }
-        setState(AttackState.DESTROYED);
     }
 
     @Override

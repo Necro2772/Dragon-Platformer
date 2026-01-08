@@ -163,7 +163,7 @@ public abstract class Enemy extends Creature {
     }
 
     @Override
-    public void damage(int attackDamage, Vector2 attackOrigin) {
+    public void damage(float attackDamage, Vector2 attackOrigin) {
         if (super.damage(attackDamage, attackOrigin, 10)) {
             stats.hitTimer = 1f;
         }

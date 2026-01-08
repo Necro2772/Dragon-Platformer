@@ -4,6 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.AttackEffect.Claw;
+import io.github.dragonplatformer.Entity.AttackEffect.Slash;
 
 public class SpikyLizard extends Enemy {
     private float attackCD = 0;
@@ -36,7 +37,7 @@ public class SpikyLizard extends Enemy {
                     }
                     if (anims.get(getState()).getKeyFrameIndex(getStateTime()) == 0
                         && anims.get(getState()).getKeyFrameIndex(getStateTime() + delta) == 1) {
-                        new Claw(5, 4, new Vector2(5 * getDirection(), 0), getDirection(), animManager, getBody());
+                        new Slash(1, 5, 2, new Vector2(5 * getDirection(), -2), getDirection(), animManager, getBody());
                     }
                     break;
             }

@@ -21,6 +21,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import io.github.dragonplatformer.Entity.*;
+import io.github.dragonplatformer.Entity.AttackEffect.AttackEffect;
 import io.github.dragonplatformer.Entity.Creature.Bat;
 import io.github.dragonplatformer.Entity.Creature.Lizard;
 import io.github.dragonplatformer.Entity.Creature.Player;
@@ -38,6 +39,7 @@ public class GameScreen implements Screen {
     private final OrthogonalTiledMapRenderer tiledMapRenderer;
     private final Label debugInfo;
     private final Array<Body> bodies;
+    private final Array<AttackEffect> effects;
     private final AnimationManager animManager;
     private boolean debug;
 
@@ -46,6 +48,7 @@ public class GameScreen implements Screen {
         TextureAtlas atlas = game.manager.get("images/pack.atlas");
         animManager = new AnimationManager(atlas);
         bodies = new Array<>();
+        effects = new Array<>();
         world = new World(new Vector2(0, -9.8f), true);
         debug = false;
         if (game.batch == null) { // Debug setup if rendering won't work
@@ -211,17 +214,23 @@ public class GameScreen implements Screen {
         tiledMapRenderer.render();
 
         world.getBodies(bodies);
+        effects.clear();
         game.batch.begin();
         for (Body body : bodies) {
             for (Fixture fixture : body.getFixtureList()) {
                 if (fixture.getUserData() != body.getUserData() && fixture.getUserData() != null) {
-                    ((Entity) fixture.getUserData()).draw(game.batch, Gdx.graphics.getDeltaTime());
+                    if (fixture.getUserData() instanceof AttackEffect) effects.add((AttackEffect) fixture.getUserData());
+                    else ((Entity) fixture.getUserData()).draw(game.batch, Gdx.graphics.getDeltaTime());
                 }
             }
             if (body.getUserData() != null) {
                 Entity e = (Entity) body.getUserData();
-                e.draw(game.batch, Gdx.graphics.getDeltaTime());
+                if (e instanceof AttackEffect) effects.add((AttackEffect) e);
+                else e.draw(game.batch, Gdx.graphics.getDeltaTime());
             }
+        }
+        for (AttackEffect effect : effects) {
+            effect.draw(game.batch, Gdx.graphics.getDeltaTime());
         }
         game.batch.end();
 
@@ -230,7 +239,7 @@ public class GameScreen implements Screen {
             "%n%nPlayer State: %s%n" +
                 "State Time: %.2f%n" +
                 "Jumps: %d%n" +
-                "Health: %d%n" +
+                "Health: %.1f%n" +
                 "Crystals: %d",
             player.getState(), player.getStateTime(), player.getInput().numJumps,
             player.getStats().getHealth(), player.getStats().getCrystals()
