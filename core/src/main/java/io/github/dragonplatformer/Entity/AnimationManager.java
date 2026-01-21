@@ -32,7 +32,7 @@ public class AnimationManager {
                 Map.entry(Player.PlayerState.IDLE, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_idle"),
-                    Animation.PlayMode.NORMAL
+                    Animation.PlayMode.LOOP
                 )), Map.entry(Player.PlayerState.RUNNING, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_run"),
@@ -42,7 +42,7 @@ public class AnimationManager {
                     atlas.findRegions("dragon_flap"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(Player.PlayerState.FLYING, new Animation<>(
-                    1/5f,
+                    1/6f,
                     atlas.findRegions("dragon_fly"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(Player.PlayerState.GLIDING, new Animation<>(
@@ -58,7 +58,7 @@ public class AnimationManager {
                     atlas.findRegions("dragon_divesoar"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(Player.PlayerState.DASH, new Animation<>(
-                    1/3f,
+                    1/4f,
                     atlas.findRegions("dragon_dash"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(Player.PlayerState.DASHDIVE, new Animation<>(
@@ -139,21 +139,82 @@ public class AnimationManager {
                         ))
                     ));
                     break;
-
+                case ENEMY_MANTICORE:
+                    enemyAnimations.put(key, Map.ofEntries(
+                        Map.entry(Enemy.EnemyState.IDLE, new Animation<>(
+                            1/3f,
+                            atlas.findRegions("manticore_idle"),
+                            Animation.PlayMode.LOOP
+                        )),
+                        Map.entry(Enemy.EnemyState.FLYIDLE, new Animation<>(
+                            1/3f,
+                            atlas.findRegions("manticore_fly"),
+                            Animation.PlayMode.LOOP
+                        )),
+                        Map.entry(Enemy.EnemyState.CHARGELUNGE, new Animation<>(
+                            1/2f,
+                            atlas.findRegions("manticore_chargepounce"),
+                            Animation.PlayMode.NORMAL
+                        )),
+                        Map.entry(Enemy.EnemyState.FLYCHARGELUNGE, new Animation<>(
+                            1/2f,
+                            atlas.findRegions("manticore_flychargepounce"),
+                            Animation.PlayMode.NORMAL
+                        )),
+                        Map.entry(Enemy.EnemyState.LUNGE, new Animation<>(
+                            1f,
+                            atlas.findRegions("manticore_pounce"),
+                            Animation.PlayMode.NORMAL
+                        )),
+                        Map.entry(Enemy.EnemyState.CHARGESHOOTPROJECTILE, new Animation<>(
+                            2f,
+                            atlas.findRegions("manticore_tailswipe"),
+                            Animation.PlayMode.NORMAL
+                        )),
+                        Map.entry(Enemy.EnemyState.SHOOTPROJECTILE, new Animation<>(
+                            0.5f,
+                            atlas.findRegions("manticore_tailswipe"),
+                            Animation.PlayMode.NORMAL
+                        )),
+                        Map.entry(Enemy.EnemyState.FLYCHARGESHOOTPROJECTILE, new Animation<>(
+                            2f,
+                            atlas.findRegions("manticore_flytailswipe"),
+                            Animation.PlayMode.NORMAL
+                        )),
+                        Map.entry(Enemy.EnemyState.FLYSHOOTPROJECTILE, new Animation<>(
+                            0.5f,
+                            atlas.findRegions("manticore_flytailswipe"),
+                            Animation.PlayMode.NORMAL
+                        ))
+                    ));
+                    break;
             }
         }
         return enemyAnimations.get(key);
     }
 
-    public Map<AttackEffect.AttackState, Animation<TextureRegion>> getAttackAnims(AnimationKeys key) {
+    public Map<AttackEffect.AttackState, Animation<TextureRegion>> getEffectAnims(AnimationKeys key) {
         if (!effectAnimations.containsKey(key)) {
             switch (key) {
                 case EFFECT_FIREBALL:
                     effectAnimations.put(key, Map.ofEntries(
                         Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
-                        1/3f,
+                        1/12f,
                         atlas.findRegions("fireball"),
-                        Animation.PlayMode.LOOP))
+                        Animation.PlayMode.LOOP)),
+                        Map.entry(AttackEffect.AttackState.DESTROYED, new Animation<>(
+                            1/12f,
+                            atlas.findRegions("fireball_destroy"),
+                            Animation.PlayMode.NORMAL))
+                    ));
+                    break;
+                case EFFECT_PROJECTILESHOOT:
+                    effectAnimations.put(key, Map.ofEntries(
+                        Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
+                            1/12f,
+                            atlas.findRegions("shooteffect"),
+                            Animation.PlayMode.NORMAL
+                        ))
                     ));
                     break;
                 case EFFECT_CLAWSWIPE:
@@ -169,6 +230,14 @@ public class AnimationManager {
                         Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
                             1/12f,
                             atlas.findRegions("sweep"),
+                            Animation.PlayMode.NORMAL))
+                    ));
+                    break;
+                case EFFECT_ENEMYDEATH:
+                    effectAnimations.put(key, Map.ofEntries(
+                        Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
+                            1/12f,
+                            atlas.findRegions("enemydeath"),
                             Animation.PlayMode.NORMAL))
                     ));
                     break;
@@ -193,9 +262,12 @@ public class AnimationManager {
         ENEMY_LIZARD,
         ENEMY_BAT,
         ENEMY_SPIKYLIZARD,
+        ENEMY_MANTICORE,
         EFFECT_FIREBALL,
         EFFECT_CLAWSWIPE,
         EFFECT_SLASH,
+        EFFECT_PROJECTILESHOOT,
+        EFFECT_ENEMYDEATH,
         LOOT_CRYSTAL
     }
 }

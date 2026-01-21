@@ -3,16 +3,17 @@ package io.github.dragonplatformer.Entity.Creature;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.AnimationManager;
-import io.github.dragonplatformer.Entity.AttackEffect.Claw;
 import io.github.dragonplatformer.Entity.AttackEffect.Slash;
 
 public class SpikyLizard extends Enemy {
     private float attackCD = 0;
 
-    public SpikyLizard(float x, float y, float width, float height, World world, AnimationManager animManager) {
-        super(x, y, width, height, new Vector2(width/2 - 1, height/2 - 1), world, animManager, AnimationManager.AnimationKeys.ENEMY_SPIKYLIZARD,
-            new Vector2(16, 8), false);
-        getStats().init(10);
+    public SpikyLizard(float x, float y, World world, AnimationManager animManager) {
+        super(x, y, 4, 4, world, animManager, AnimationManager.AnimationKeys.ENEMY_SPIKYLIZARD);
+        //setHitboxShape(new Vector2(2, 2));
+        setPlayerSensorShape(new Vector2(16, 8));
+        init();
+        stats().init(10);
     }
 
     @Override
@@ -37,7 +38,7 @@ public class SpikyLizard extends Enemy {
                     }
                     if (anims.get(getState()).getKeyFrameIndex(getStateTime()) == 0
                         && anims.get(getState()).getKeyFrameIndex(getStateTime() + delta) == 1) {
-                        new Slash(1, 5, 2, new Vector2(5 * getDirection(), -2), getDirection(), animManager, getBody());
+                        new Slash(1, 5, 5, 2, new Vector2(5 * getDirection(), -2), getDirection(), animManager, getBody());
                     }
                     break;
             }

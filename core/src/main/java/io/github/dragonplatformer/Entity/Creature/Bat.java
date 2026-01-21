@@ -10,13 +10,15 @@ import io.github.dragonplatformer.Entity.AnimationManager;
 
 public class Bat extends Enemy {
     private float prevPos;
-    private float flapForce = 5f;
+    private float flapForce = 4f;
     private float waitTime;
 
-    public Bat(float x, float y, float width, float height, World world, AnimationManager animManager) {
-        super(x, y, width, height, new Vector2(width/2, height/2), world, animManager, AnimationManager.AnimationKeys.ENEMY_BAT,
-            new Vector2(15, 20), true);
-        getStats().init(2);
+    public Bat(float x, float y, World world, AnimationManager animManager) {
+        super(x, y, 1f, 1f, world, animManager, AnimationManager.AnimationKeys.ENEMY_BAT);
+        //setHitboxShape(new Vector2(1.5f/2f, 1.5f/2f));
+        setPlayerSensorShape(new Vector2(15, 20), new Vector2(0, 0));
+        init();
+        stats().init(1);
         getBody().setGravityScale(0.75f);
         prevPos = 0;
         waitTime = (float) Math.random() * 2 + 1;
@@ -27,6 +29,9 @@ public class Bat extends Enemy {
     public void act(float delta) {
         super.act(delta);
         if (getState() == EnemyState.DEATH) return;
+
+        float horizontalSpeed = 3;
+
         Vector2 pos = getBody().getPosition();
         Vector2 vel = getBody().getLinearVelocity();
         if (getPlayerSighted()) {
@@ -41,7 +46,7 @@ public class Bat extends Enemy {
                     break;
                 case ATTACKING:
                     flapForce = 0;
-                    if (getStateTime() > 0.25f) setState(EnemyState.IDLE);
+                    if (getStateTime() > 0.5f) setState(EnemyState.IDLE);
                     break;
             }
         } else {
@@ -50,7 +55,6 @@ public class Bat extends Enemy {
         }
         if (anims.get(getState()).getKeyFrameIndex(getStateTime()) == 0 &&
             anims.get(getState()).getKeyFrameIndex(getStateTime() + delta) == 1 ) {
-            float flapHorizontal = 0;
             if (prevPos != 0) {
                 flapForce += MathUtils.clamp(prevPos - pos.y, -2, 2);
                 flapForce = MathUtils.clamp(flapForce, -2, 12);
@@ -63,10 +67,9 @@ public class Bat extends Enemy {
                 if (rayCast.hit) flapForce -= 1;
             }
             if (getState() != EnemyState.ATTACKING && Math.abs(pos.x - getPlayerPos().x) < 5) {
-                if (pos.x > getPlayerPos().x) flapHorizontal = 5;
-                else flapHorizontal = -5;
-            }
-            getBody().applyLinearImpulse(new Vector2(flapHorizontal, flapForce * getBody().getMass()), pos, true);
+                if (pos.x < getPlayerPos().x) horizontalSpeed *= 1;
+            } else horizontalSpeed = 0;
+            getBody().applyLinearImpulse(new Vector2(horizontalSpeed, flapForce * getBody().getMass()), pos, true);
             prevPos = pos.y;
         }
     }
@@ -77,7 +80,7 @@ public class Bat extends Enemy {
         switch (getState()) {
             case ATTACKING:
                 Vector2 dir = new Vector2(getPlayerPos());
-                dir.sub(getBody().getPosition()).nor().scl(16);
+                dir.sub(getBody().getPosition()).nor().scl(12);
                 getBody().applyLinearImpulse(dir.sub(getBody().getLinearVelocity()), getBody().getPosition(), true);
                 break;
         }

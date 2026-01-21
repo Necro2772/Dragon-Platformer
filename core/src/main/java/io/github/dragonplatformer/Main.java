@@ -21,7 +21,7 @@ public class Main extends Game {
     @Override
     public void create() {
         batch = new SpriteBatch();
-        viewport = new ExtendViewport(48, 27, new OrthographicCamera());
+        viewport = new ExtendViewport(42, 24, new OrthographicCamera());
         font = new BitmapFont();
         font.setUseIntegerPositions(true);
         font.getData().setScale(27f / Gdx.graphics.getHeight() * 15);

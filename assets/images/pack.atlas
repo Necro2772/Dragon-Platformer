@@ -6,280 +6,455 @@ filter: Nearest, Nearest
 repeat: none
 bat_idle
   rotate: false
-  xy: 456, 714
-  size: 64, 64
-  orig: 64, 64
+  xy: 68, 4
+  size: 32, 32
+  orig: 32, 32
   offset: 0, 0
   index: 0
 bat_idle
   rotate: false
-  xy: 554, 812
-  size: 64, 64
-  orig: 64, 64
+  xy: 588, 482
+  size: 32, 32
+  orig: 32, 32
   offset: 0, 0
   index: 1
 clawswipe
   rotate: false
-  xy: 456, 648
+  xy: 456, 716
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: 0
 clawswipe
   rotate: false
-  xy: 620, 812
+  xy: 554, 814
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: 1
 clawswipe
   rotate: false
-  xy: 456, 582
+  xy: 456, 650
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: 2
 crystalshard
   rotate: false
-  xy: 910, 892
+  xy: 390, 828
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
 dragon_attackdown
   rotate: false
-  xy: 196, 684
+  xy: 196, 686
   size: 128, 128
   orig: 128, 128
   offset: 0, 0
   index: -1
 dragon_attackforward
   rotate: false
-  xy: 390, 878
+  xy: 390, 880
   size: 128, 128
   orig: 128, 128
   offset: 0, 0
   index: -1
 dragon_attackforward2
   rotate: false
-  xy: 2, 296
+  xy: 2, 298
   size: 128, 128
   orig: 128, 128
   offset: 0, 0
   index: -1
 dragon_attackforward3
   rotate: false
-  xy: 196, 554
+  xy: 196, 556
   size: 128, 128
   orig: 128, 128
   offset: 0, 0
   index: -1
 dragon_attackup
   rotate: false
-  xy: 520, 878
+  xy: 520, 880
   size: 128, 128
   orig: 128, 128
   offset: 0, 0
   index: -1
 dragon_dash
   rotate: false
-  xy: 2, 166
-  size: 128, 128
-  orig: 128, 128
+  xy: 620, 814
+  size: 64, 64
+  orig: 64, 64
   offset: 0, 0
-  index: -1
+  index: 0
+dragon_dash
+  rotate: false
+  xy: 456, 584
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 1
 dragon_dive
   rotate: false
-  xy: 650, 878
+  xy: 2, 168
   size: 128, 128
   orig: 128, 128
   offset: 0, 0
   index: -1
 dragon_divesoar
   rotate: false
-  xy: 2, 36
+  xy: 650, 880
   size: 128, 128
   orig: 128, 128
   offset: 0, 0
   index: -1
 dragon_flap
   rotate: false
-  xy: 780, 878
-  size: 128, 128
-  orig: 128, 128
+  xy: 686, 814
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 0
+dragon_fly
+  rotate: false
+  xy: 686, 814
+  size: 64, 64
+  orig: 64, 64
   offset: 0, 0
   index: 0
 dragon_flap
   rotate: false
-  xy: 196, 424
-  size: 128, 128
-  orig: 128, 128
+  xy: 456, 518
+  size: 64, 64
+  orig: 64, 64
   offset: 0, 0
   index: 1
 dragon_fly
   rotate: false
-  xy: 132, 294
-  size: 128, 128
-  orig: 128, 128
-  offset: 0, 0
-  index: 0
-dragon_fly
-  rotate: false
-  xy: 132, 164
-  size: 128, 128
-  orig: 128, 128
-  offset: 0, 0
-  index: 1
-dragon_fly
-  rotate: false
-  xy: 132, 34
-  size: 128, 128
-  orig: 128, 128
+  xy: 456, 518
+  size: 64, 64
+  orig: 64, 64
   offset: 0, 0
   index: 2
 dragon_fly
   rotate: false
-  xy: 326, 684
-  size: 128, 128
-  orig: 128, 128
+  xy: 752, 814
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 1
+dragon_fly
+  rotate: false
+  xy: 456, 452
+  size: 64, 64
+  orig: 64, 64
   offset: 0, 0
   index: 3
 dragon_glide
   rotate: false
-  xy: 326, 554
-  size: 128, 128
-  orig: 128, 128
+  xy: 818, 814
+  size: 64, 64
+  orig: 64, 64
   offset: 0, 0
-  index: -1
+  index: 0
+dragon_glide
+  rotate: false
+  xy: 910, 846
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 1
 dragon_idle
   rotate: false
-  xy: 326, 424
+  xy: 262, 2
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 0
+dragon_idle
+  rotate: false
+  xy: 360, 100
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 1
+dragon_run
+  rotate: false
+  xy: 522, 716
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 0
+dragon_run
+  rotate: false
+  xy: 522, 650
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 1
+dragon_run
+  rotate: false
+  xy: 522, 584
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 2
+enemydeath
+  rotate: false
+  xy: 522, 518
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 0
+enemydeath
+  rotate: false
+  xy: 522, 452
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 1
+enemydeath
+  rotate: false
+  xy: 588, 748
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 2
+enemydeath
+  rotate: false
+  xy: 588, 682
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 3
+fireball
+  rotate: false
+  xy: 390, 846
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: 0
+fireball
+  rotate: false
+  xy: 2, 4
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: 1
+fireball
+  rotate: false
+  xy: 786, 780
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: 2
+fireball_destroy
+  rotate: false
+  xy: 588, 516
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: 0
+fireball_destroy
+  rotate: false
+  xy: 654, 582
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: 1
+fireball_destroy
+  rotate: false
+  xy: 720, 648
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: 2
+fireball_destroy
+  rotate: false
+  xy: 786, 746
+  size: 64, 32
+  orig: 64, 32
+  offset: 0, 0
+  index: 3
+lizard_attack
+  rotate: false
+  xy: 654, 748
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 0
+lizard_idle
+  rotate: false
+  xy: 654, 748
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 0
+lizard_attack
+  rotate: false
+  xy: 588, 616
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 1
+lizard_attack
+  rotate: false
+  xy: 654, 682
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 2
+lizard_idle
+  rotate: false
+  xy: 720, 748
+  size: 64, 64
+  orig: 64, 64
+  offset: 0, 0
+  index: 1
+manticore_chargepounce
+  rotate: false
+  xy: 2, 38
   size: 128, 128
   orig: 128, 128
   offset: 0, 0
   index: -1
-dragon_run
+manticore_fly
   rotate: false
-  xy: 326, 424
-  size: 128, 128
-  orig: 128, 128
-  offset: 0, 0
-  index: 1
-dragon_run
-  rotate: false
-  xy: 262, 294
+  xy: 780, 880
   size: 128, 128
   orig: 128, 128
   offset: 0, 0
   index: 0
-dragon_run
+manticore_fly
   rotate: false
-  xy: 262, 164
+  xy: 196, 426
   size: 128, 128
   orig: 128, 128
   offset: 0, 0
-  index: 2
-fireball
+  index: 1
+manticore_flychargepounce
   rotate: false
-  xy: 2, 2
-  size: 32, 32
-  orig: 32, 32
+  xy: 132, 296
+  size: 128, 128
+  orig: 128, 128
   offset: 0, 0
   index: 0
-fireball
+manticore_flychargepounce
   rotate: false
-  xy: 390, 844
-  size: 32, 32
-  orig: 32, 32
+  xy: 132, 166
+  size: 128, 128
+  orig: 128, 128
   offset: 0, 0
   index: 1
-fireball
+manticore_flytailswipe
   rotate: false
-  xy: 818, 844
-  size: 32, 32
-  orig: 32, 32
+  xy: 132, 36
+  size: 128, 128
+  orig: 128, 128
   offset: 0, 0
-  index: 2
-lizard_attack
+  index: 0
+manticore_flytailswipe
   rotate: false
-  xy: 686, 812
+  xy: 326, 686
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 1
+manticore_idle
+  rotate: false
+  xy: 326, 556
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: -1
+manticore_pounce
+  rotate: false
+  xy: 326, 426
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: -1
+manticore_tailswipe
+  rotate: false
+  xy: 262, 296
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 0
+manticore_tailswipe
+  rotate: false
+  xy: 262, 166
+  size: 128, 128
+  orig: 128, 128
+  offset: 0, 0
+  index: 1
+shooteffect
+  rotate: false
+  xy: 588, 550
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: 0
-lizard_idle
+shooteffect
   rotate: false
-  xy: 686, 812
-  size: 64, 64
-  orig: 64, 64
-  offset: 0, 0
-  index: 0
-lizard_attack
-  rotate: false
-  xy: 456, 516
+  xy: 654, 616
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: 1
-lizard_attack
+shooteffect
   rotate: false
-  xy: 752, 812
+  xy: 720, 682
   size: 64, 64
   orig: 64, 64
   offset: 0, 0
   index: 2
-lizard_idle
-  rotate: false
-  xy: 456, 450
-  size: 64, 64
-  orig: 64, 64
-  offset: 0, 0
-  index: 1
 spikylizard_attack
   rotate: false
-  xy: 2, 814
+  xy: 2, 816
   size: 192, 192
   orig: 192, 192
   offset: 0, 0
   index: 0
 spikylizard_attack
   rotate: false
-  xy: 2, 620
+  xy: 2, 622
   size: 192, 192
   orig: 192, 192
   offset: 0, 0
   index: 1
 spikylizard_idle
   rotate: false
-  xy: 196, 814
+  xy: 196, 816
   size: 192, 192
   orig: 192, 192
   offset: 0, 0
   index: 0
 spikylizard_idle
   rotate: false
-  xy: 2, 426
+  xy: 2, 428
   size: 192, 192
   orig: 192, 192
   offset: 0, 0
   index: 1
 sweep
   rotate: false
-  xy: 910, 910
+  xy: 910, 912
   size: 96, 96
   orig: 96, 96
   offset: 0, 0
   index: 0
 sweep
   rotate: false
-  xy: 262, 66
+  xy: 262, 68
   size: 96, 96
   orig: 96, 96
   offset: 0, 0
   index: 1
 sweep
   rotate: false
-  xy: 456, 780
+  xy: 456, 782
   size: 96, 96
   orig: 96, 96
   offset: 0, 0

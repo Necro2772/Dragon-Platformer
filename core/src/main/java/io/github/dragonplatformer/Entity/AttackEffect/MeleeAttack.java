@@ -12,8 +12,9 @@ import java.util.Map;
 
 public abstract class MeleeAttack extends AttackEffect {
     private final Fixture attackFixture;
-    public MeleeAttack(float damage, float width, float height, Vector2 offset, int direction, Map<AttackState, Animation<TextureRegion>> anims, Body body) {
-        super(damage, 0, 0, width, height, direction, anims, body, body.getWorld());
+    private float recoil;
+    public MeleeAttack(float damage, float knockback, float width, float height, Vector2 offset, int direction, Map<AttackState, Animation<TextureRegion>> anims, Body body) {
+        super(damage, knockback, 0, 0, width, height, direction, anims, body, body.getWorld());
         PolygonShape fixtureShape = new PolygonShape();
         fixtureShape.setAsBox(width / 2f, height / 2f, offset, 0);
         FixtureDef fixtureDef = new FixtureDef();
@@ -37,6 +38,11 @@ public abstract class MeleeAttack extends AttackEffect {
         fixtureShape.dispose();
 
         setPositionOffset(offset);
+        recoil = 0;
+    }
+
+    public void setRecoil(float recoil) {
+        this.recoil = recoil;
     }
 
     @Override
@@ -48,7 +54,11 @@ public abstract class MeleeAttack extends AttackEffect {
     public void beginContact(Fixture entityFixture, Fixture contactFixture) {
         if (contactFixture.getBody().getUserData() instanceof Creature) {
             Creature creature = ((Creature) contactFixture.getBody().getUserData());
-            creature.damage(getDamage(), getBody().getPosition());
+            creature.damage(getDamage(), getBody().getPosition(), getKnockback());
+        }
+        if (getBody().getUserData() instanceof Player) {
+            Player player = ((Player) getBody().getUserData());
+            player.recoil(contactFixture.getBody().getPosition(), recoil);
         }
     }
 

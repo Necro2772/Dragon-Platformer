@@ -6,7 +6,7 @@ import io.github.dragonplatformer.Entity.AnimationManager;
 
 
 public class Slash extends MeleeAttack {
-    public Slash(float damage, float width, float height, Vector2 offset, int direction, AnimationManager animManager, Body body) {
-        super(damage, width, height, offset, direction, animManager.getAttackAnims(AnimationManager.AnimationKeys.EFFECT_SLASH), body);
+    public Slash(float damage, float knockback, float width, float height, Vector2 offset, int direction, AnimationManager animManager, Body body) {
+        super(damage, knockback, width, height, offset, direction, animManager.getEffectAnims(AnimationManager.AnimationKeys.EFFECT_SLASH), body);
     }
 }

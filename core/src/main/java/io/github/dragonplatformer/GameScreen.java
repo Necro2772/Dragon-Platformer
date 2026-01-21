@@ -1,10 +1,18 @@
 package io.github.dragonplatformer;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g3d.Renderable;
+import com.badlogic.gdx.graphics.g3d.Shader;
+import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
+import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.MapObjects;
 import com.badlogic.gdx.maps.MapProperties;
@@ -22,10 +30,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import io.github.dragonplatformer.Entity.*;
 import io.github.dragonplatformer.Entity.AttackEffect.AttackEffect;
-import io.github.dragonplatformer.Entity.Creature.Bat;
-import io.github.dragonplatformer.Entity.Creature.Lizard;
-import io.github.dragonplatformer.Entity.Creature.Player;
-import io.github.dragonplatformer.Entity.Creature.SpikyLizard;
+import io.github.dragonplatformer.Entity.Creature.*;
 
 
 public class GameScreen implements Screen {
@@ -40,7 +45,11 @@ public class GameScreen implements Screen {
     private final Label debugInfo;
     private final Array<Body> bodies;
     private final Array<AttackEffect> effects;
+    private final Array<Creature> hitBodies;
+    private final Array<Creature> invulBodies;
     private final AnimationManager animManager;
+    private final ShaderProgram hitShader;
+    private float shaderTimer;
     private boolean debug;
 
     public GameScreen(final Main game, final TiledMap map) {
@@ -48,16 +57,42 @@ public class GameScreen implements Screen {
         TextureAtlas atlas = game.manager.get("images/pack.atlas");
         animManager = new AnimationManager(atlas);
         bodies = new Array<>();
+        hitBodies = new Array<>();
+        invulBodies = new Array<>();
         effects = new Array<>();
         world = new World(new Vector2(0, -9.8f), true);
         debug = false;
+        shaderTimer = 0;
+        hitShader = new ShaderProgram(
+            "attribute highp vec4 a_position;\n" +
+            "attribute highp vec4 a_color;\n" +
+            "attribute highp vec2 a_texCoord0;\n" +
+            "uniform mat4 u_projTrans;\n" +
+            "varying highp vec4 v_color;\n" +
+            "varying highp vec2 v_texCoords;\n" +
+            "void main() {\n" +
+                "v_color = a_color;\n" +
+                "v_texCoords = a_texCoord0;\n" +
+                "gl_Position = u_projTrans * a_position;\n" +
+            "}",
+            "varying highp vec4 v_color;\n" +
+            "varying highp vec2 v_texCoords;\n" +
+            "uniform sampler2D u_texture;\n" +
+            "void main() {\n" +
+                "gl_FragColor = vec4(0.0);\n" +
+                "highp vec4 color = texture2D(u_texture, v_texCoords);\n" +
+                "if (color.a > 0.0) {\n" +
+                    "gl_FragColor = vec4(1, 1, 1, 1);\n" +
+                "}\n" +
+            "}"
+        );
         if (game.batch == null) { // Debug setup if rendering won't work
             uiStage = null;
             debugRenderer = null;
             this.map = map;
             tiledMapRenderer = null;
             debugInfo = null;
-            player = new Player(0, 0, 3, 3, world, this, animManager);
+            player = new Player(0, 0, world, this, animManager);
             return;
         }
         uiStage = new Stage(new ScreenViewport());
@@ -86,7 +121,7 @@ public class GameScreen implements Screen {
                 new Portal(x, y, width, height, world, (String) properties.get("stageexit"), this);
             }
         }
-        player = new Player(playerx, playery, 3, 3, world, this, animManager);
+        player = new Player(playerx, playery, world, this, animManager);
         loadTilemapData();
 
         Label.LabelStyle style = new Label.LabelStyle();
@@ -110,14 +145,16 @@ public class GameScreen implements Screen {
                 String type = (String) enemy.getProperties().get("type");
                 switch (type) {
                     case "lizard":
-                        new Lizard(posx, posy, 2, 2, world, animManager);
+                        new Lizard(posx, posy, world, animManager);
                         break;
                     case "bat":
-                        new Bat(posx, posy, 1.5f, 1.5f, world, animManager);
+                        new Bat(posx, posy, world, animManager);
                         break;
                     case "spikylizard":
-                        new SpikyLizard(posx, posy, 6, 6, world, animManager);
+                        new SpikyLizard(posx, posy, world, animManager);
                         break;
+                    case "manticore":
+                        new Manticore(posx, posy, world, animManager);
                 }
             }
         }
@@ -215,20 +252,46 @@ public class GameScreen implements Screen {
 
         world.getBodies(bodies);
         effects.clear();
+        hitBodies.clear();
+        invulBodies.clear();
         game.batch.begin();
         for (Body body : bodies) {
             for (Fixture fixture : body.getFixtureList()) {
                 if (fixture.getUserData() != body.getUserData() && fixture.getUserData() != null) {
                     if (fixture.getUserData() instanceof AttackEffect) effects.add((AttackEffect) fixture.getUserData());
-                    else ((Entity) fixture.getUserData()).draw(game.batch, Gdx.graphics.getDeltaTime());
                 }
             }
             if (body.getUserData() != null) {
                 Entity e = (Entity) body.getUserData();
                 if (e instanceof AttackEffect) effects.add((AttackEffect) e);
+                else if (e instanceof Creature) {
+                    Creature c = (Creature) e;
+                    if (c.getHitFlash()) hitBodies.add(c);
+                    else if (c.stats().getInvulnerable()) invulBodies.add(c);
+                    else c.draw(game.batch, Gdx.graphics.getDeltaTime());
+                }
                 else e.draw(game.batch, Gdx.graphics.getDeltaTime());
             }
         }
+        game.batch.setShader(hitShader);
+        for (Creature creature : hitBodies) {
+            if (creature.getHitEffectTimer() > 0.1f) creature.draw(game.batch, Gdx.graphics.getDeltaTime());
+        }
+        game.batch.setShader(null);
+        game.batch.setColor(Color.BLACK);
+        for (Creature creature : hitBodies) {
+            if (creature.getHitEffectTimer() <= 0.1f) creature.draw(game.batch, Gdx.graphics.getDeltaTime());
+        }
+
+        shaderTimer += Gdx.graphics.getDeltaTime();
+        shaderTimer %= 0.7f;
+        //if (shaderTimer < 0.1f) game.batch.setColor(new Color(0.3f, 0.3f, 0.3f, 0));
+        //else
+            game.batch.setColor(new Color(0.6f, 0.6f, 0.6f, 1f));
+        for (Creature creature : invulBodies) {
+            creature.draw(game.batch, Gdx.graphics.getDeltaTime());
+        }
+        game.batch.setColor(Color.WHITE);
         for (AttackEffect effect : effects) {
             effect.draw(game.batch, Gdx.graphics.getDeltaTime());
         }
@@ -240,10 +303,14 @@ public class GameScreen implements Screen {
                 "State Time: %.2f%n" +
                 "Jumps: %d%n" +
                 "Health: %.1f%n" +
-                "Crystals: %d",
+                "Crystals: %d%n" +
+                "Glide Charge: %.2f%n" +
+                "Soar Charge: %.2f",
             player.getState(), player.getStateTime(), player.getInput().numJumps,
-            player.getStats().getHealth(), player.getStats().getCrystals()
+            player.stats().getHealth(), player.stats().getCrystals(), player.getInput().glideCharge, player.getInput().soarCharge
             ));
+        debugInfo.pack();
+        debugInfo.setPosition(10, Gdx.graphics.getHeight() - debugInfo.getPrefHeight());
         uiStage.draw();
     }
 
@@ -252,7 +319,6 @@ public class GameScreen implements Screen {
         if (game.batch == null) return;
         game.viewport.update(width, height);
         uiStage.getViewport().update(width, height, true);
-        debugInfo.setPosition(10, height - debugInfo.getHeight() - 20);
         tiledMapRenderer.setView((OrthographicCamera) game.viewport.getCamera());
     }
 

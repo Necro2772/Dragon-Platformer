@@ -16,10 +16,12 @@ public abstract class AttackEffect extends Entity {
     private float rotation;
     private Vector2 positionOffset;
     private final float damage;
+    private final float knockback;
 
-    public AttackEffect(float damage, float x, float y, float width, float height, int direction,
+    public AttackEffect(float damage, float knockback, float x, float y, float width, float height, int direction,
                         Map<AttackState, Animation<TextureRegion>> anims, Body body, World world) {
         super(x, y, width, height, world, body);
+        this.knockback = knockback;
         this.damage = damage;
         setDirection(direction);
         this.anims = anims;
@@ -32,7 +34,7 @@ public abstract class AttackEffect extends Entity {
     @Override
     public void act(float delta) {
         if (getState() == AttackState.DESTROYED) {
-            destroy();
+            if (anims.get(getState()) == null || anims.get(getState()).isAnimationFinished(getStateTime() + delta)) destroy();
         }
     }
 
@@ -71,7 +73,14 @@ public abstract class AttackEffect extends Entity {
     }
 
     public void setState(AttackState state) {
-        this.state = state;
+        if (this.state != state) {
+            this.state = state;
+            this.stateTime = 0;
+            if (this.state == AttackState.DESTROYED) {
+                setRotation(0);
+                if (getBody().getUserData() == this) getBody().setActive(false);
+            }
+        }
     }
 
     public float getStateTime() {
@@ -79,7 +88,7 @@ public abstract class AttackEffect extends Entity {
     }
 
     public void setRotation(float rotation) {
-        this.rotation = rotation;
+        this.rotation =(rotation + 90) % 180 - 90;
     }
 
     public float getRotation() {
@@ -88,6 +97,10 @@ public abstract class AttackEffect extends Entity {
 
     public float getDamage() {
         return damage;
+    }
+
+    public float getKnockback() {
+        return knockback;
     }
 
     public enum AttackState {
