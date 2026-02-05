@@ -6,6 +6,8 @@ import io.github.dragonplatformer.Entity.Entity;
 import io.github.dragonplatformer.GameContactListener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class Creature extends Entity {
     private final FixtureDef bodyFixtureDef;
@@ -21,9 +23,10 @@ public abstract class Creature extends Entity {
     protected CreatureStats stats;
 
     public Creature(float x, float y, float width, float height, World world) {
-        super(x, y, width, height, world, null);
+        super(x, y, width, height, world);
         bodyFixtureDef = new FixtureDef();
         bodyFixtureDef.density = 0.5f;
+        bodyFixtureDef.friction = 0;
         bodyFixtureDef.filter.maskBits = GameContactListener.FilterBits.STATIC.getBit();
         hitboxSize = new Vector2(width/2, height/2);
         hitboxCenter = new Vector2(0, 0);
@@ -121,14 +124,17 @@ public abstract class Creature extends Entity {
             avgPos.scl(1f / (overlapFixtures.size() + 1));
             avgMass /= (overlapFixtures.size() + 1);
             if (getBody().getMass() <= avgMass) {
-                if (getCenter().add(getBody().getPosition()).x < avgPos.x) {
+                float forceX = 100;
+                float maxVel = 3;
+                if (getCenter().add(getBody().getPosition()).x < avgPos.x
+                    && getBody().getLinearVelocity().x > -maxVel) {
                     getBody().applyForceToCenter(
-                        new Vector2(-100, 0).add(new Vector2(getBody().getLinearVelocity().x * -10, 0)),
+                        (-forceX - getBody().getLinearVelocity().x) * getBody().getMass(), 0,
                         true
                     );
-                } else {
+                } else if (getBody().getLinearVelocity().x < maxVel){
                     getBody().applyForceToCenter(
-                        new Vector2(100, 0).add(new Vector2(getBody().getLinearVelocity().x * -10, 0)),
+                        (forceX - getBody().getLinearVelocity().x) * getBody().getMass(), 0,
                         true
                     );
                 }
@@ -163,7 +169,7 @@ public abstract class Creature extends Entity {
     }
 
     public boolean damage(float attackDamage, Vector2 attackOrigin, float knockback) {
-        if (!stats.getInvulnerable()) {
+        if (!stats().getInvulnerable()) {
             stats().setHealth(stats().getHealth() - attackDamage);
             getBody().applyLinearImpulse(getBody().getLinearVelocity().scl(-1), getBody().getPosition(), true);
             if (attackOrigin.x - getBody().getPosition().x < 0) {
@@ -217,15 +223,29 @@ public abstract class Creature extends Entity {
         private float maxHealth;
         private float health;
         private float invulnerability;
+        private final Map<Integer, Float> hitMap;
 
         public CreatureStats(int maxHealth) {
             setMaxHealth(maxHealth);
             setHealth(maxHealth);
             invulnerability = 0;
+            hitMap = new HashMap<>();
+        }
+
+        public boolean getHitGroupInvul(int hitGroup) {
+            return hitMap.containsKey(hitGroup);
+        }
+
+        public void addHitGroupInvul(int hitGroup, float cooldown) {
+            if (hitGroup != -1 && cooldown > 0) hitMap.put(hitGroup, cooldown);
         }
 
         public void updateCooldowns(float delta) {
             if (getInvulnerable()) setInvulnerability(invulnerability - delta);
+            for (int group : hitMap.keySet()) {
+                if (hitMap.get(group) - delta < 0) hitMap.remove(group);
+                else hitMap.replace(group, hitMap.get(group) - delta);
+            }
         }
 
         public float getMaxHealth() {

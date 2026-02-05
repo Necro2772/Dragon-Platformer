@@ -58,31 +58,47 @@ public class AnimationManager {
                     atlas.findRegions("dragon_divesoar"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(Player.PlayerState.DASH, new Animation<>(
-                    1/4f,
+                    1/6f,
                     atlas.findRegions("dragon_dash"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(Player.PlayerState.DASHDIVE, new Animation<>(
-                    1/3f,
+                    1/4f,
                     atlas.findRegions("dragon_dive"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(Player.PlayerState.ATTACKFORWARD, new Animation<>(
-                    1/3f,
+                    1/4f,
                     atlas.findRegions("dragon_attackforward"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(Player.PlayerState.ATTACKFORWARD2, new Animation<>(
-                    1/3f,
+                    1/4f,
                     atlas.findRegions("dragon_attackforward2"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(Player.PlayerState.ATTACKFORWARD3, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_attackforward3"),
                     Animation.PlayMode.NORMAL
+                )), Map.entry(Player.PlayerState.ATTACKDIVE, new Animation<>(
+                    1/3f,
+                    atlas.findRegions("dragon_attackforward3"),
+                    Animation.PlayMode.NORMAL
+                )), Map.entry(Player.PlayerState.ATTACKDASH, new Animation<>(
+                    1/3f,
+                    atlas.findRegions("dragon_attackforward3"),
+                    Animation.PlayMode.NORMAL
+                )), Map.entry(Player.PlayerState.ATTACKGLIDE, new Animation<>(
+                    1/3f,
+                    atlas.findRegions("dragon_attackforward3"),
+                    Animation.PlayMode.NORMAL
+                )), Map.entry(Player.PlayerState.ATTACKJUMP, new Animation<>(
+                    1/3f,
+                    atlas.findRegions("dragon_attackforward3"),
+                    Animation.PlayMode.NORMAL
                 )), Map.entry(Player.PlayerState.ATTACKDOWN, new Animation<>(
-                    1/2f,
+                    1/3f,
                     atlas.findRegions("dragon_attackdown"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(Player.PlayerState.ATTACKUP, new Animation<>(
-                    1/2f,
+                    1/3f,
                     atlas.findRegions("dragon_attackup"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(Player.PlayerState.DEATH, new Animation<>(
@@ -208,6 +224,18 @@ public class AnimationManager {
                             Animation.PlayMode.NORMAL))
                     ));
                     break;
+                case EFFECT_EXPLOSION:
+                    effectAnimations.put(key, Map.ofEntries(
+                        Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
+                            1/12f,
+                            atlas.findRegions("fireball_destroy"),
+                            Animation.PlayMode.NORMAL)),
+                        Map.entry(AttackEffect.AttackState.DESTROYED, new Animation<>(
+                            1/12f,
+                            atlas.findRegions("fireball_destroy"),
+                            Animation.PlayMode.NORMAL))
+                    ));
+                    break;
                 case EFFECT_PROJECTILESHOOT:
                     effectAnimations.put(key, Map.ofEntries(
                         Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
@@ -264,6 +292,7 @@ public class AnimationManager {
         ENEMY_SPIKYLIZARD,
         ENEMY_MANTICORE,
         EFFECT_FIREBALL,
+        EFFECT_EXPLOSION,
         EFFECT_CLAWSWIPE,
         EFFECT_SLASH,
         EFFECT_PROJECTILESHOOT,

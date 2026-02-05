@@ -20,7 +20,7 @@ public abstract class Loot extends Entity {
     public Loot(float x, float y, float width, float height, World world,
                 AnimationManager animManager, AnimationManager.AnimationKeys animKey,
                 LootType type, int value) {
-        super(x, y, width, height, world, null);
+        super(x, y, width, height, world);
         this.animation = animManager.getLootAnim(animKey);
         this.type = type;
         stateTime = 0;

@@ -12,6 +12,7 @@ public class Lizard extends Enemy {
         super(x, y, 1.5f, 1.5f, world, animManager, AnimationManager.AnimationKeys.ENEMY_LIZARD);
         init();
         stats().init(3, 2, 12);
+        setLoot(3);
     }
 
     @Override

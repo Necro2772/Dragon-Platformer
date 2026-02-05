@@ -22,7 +22,7 @@ public abstract class Projectile extends AttackEffect {
     public Projectile(float damage, float knockback, float health, float lifetime,
                       float x, float y, float width, float height, int direction,
                       Map<AttackState, Animation<TextureRegion>> anims, boolean isPlayer, World world) {
-        super(damage, knockback, x, y, width, height, direction, anims, null, world);
+        super(damage, knockback, x, y, width, height, direction, anims, world);
         this.health = health;
         this.lifetime = lifetime;
         this.destroyOnStatic = true;
@@ -82,16 +82,24 @@ public abstract class Projectile extends AttackEffect {
     @Override
     public void act(float delta) {
         super.act(delta);
-        if (this.health <= 0) setState(AttackState.DESTROYED);
+        if (this.health <= 0 && getState() != AttackState.DESTROYED) {
+            setState(AttackState.DESTROYED);
+            onDestroy();
+        }
         lifetime -= delta;
         if (lifetime <= 0 && getState() != AttackState.DESTROYED) destroy();
     }
+
+    public void onDestroy() { }
 
     @Override
     public void beginContact(Fixture entityFixture, Fixture contactFixture) {
         if (contactFixture.getUserData() instanceof Creature) {
             Creature creature = ((Creature) contactFixture.getBody().getUserData());
-            creature.damage(getDamage(), getBody().getPosition(), getKnockback());
+            if (!creature.stats().getHitGroupInvul(getHitGroup())){
+                creature.damage(getDamage(), getBody().getPosition(), getKnockback());
+                creature.stats().addHitGroupInvul(getHitGroup(), getHitGroupCD());
+            }
             if (destroyOnEnemy) this.health = 0;
         } else if (contactFixture.getUserData() instanceof Projectile) {
             Projectile collideProjectile = (Projectile) contactFixture.getUserData();
@@ -101,7 +109,7 @@ public abstract class Projectile extends AttackEffect {
         } else if (contactFixture.getUserData() instanceof MeleeAttack) {
             MeleeAttack collideAttack = (MeleeAttack) contactFixture.getUserData();
             this.health -= collideAttack.getDamage() * 1.5f;
-        }else {
+        } else {
             if (destroyOnStatic) this.health = 0;
         }
     }
@@ -109,5 +117,13 @@ public abstract class Projectile extends AttackEffect {
     @Override
     public void endContact(Fixture entityFixture, Fixture contactFixture) {
 
+    }
+
+    public void setHealth(float health) {
+        this.health = health;
+    }
+
+    public float getHealth() {
+        return health;
     }
 }

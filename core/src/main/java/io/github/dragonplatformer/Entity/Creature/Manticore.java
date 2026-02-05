@@ -23,7 +23,7 @@ public class Manticore extends Enemy {
         stats().init(100);
         target = new Vector2();
         attackTimer = 0;
-        setStunOnHit(false);
+        //setStunOnHit(false);
         attackPhase = new Queue<>();
         setLoot((int) (Math.random() * 10) + 40);
     }
@@ -45,7 +45,7 @@ public class Manticore extends Enemy {
                     else if (attackTimer <= 0) {
 
                         if (stats().getHealth() > stats().getMaxHealth() * 0.5) {
-                            chargeVelocity = 1f;
+                            chargeVelocity = 0.8f;
                             pounceChargeTime = 1.2f;
                             pounceDuration = 0.9f;
                             projectileChargeTime = 0.5f;

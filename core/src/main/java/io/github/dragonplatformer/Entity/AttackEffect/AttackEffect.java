@@ -17,18 +17,52 @@ public abstract class AttackEffect extends Entity {
     private Vector2 positionOffset;
     private final float damage;
     private final float knockback;
+    private float hitCD;
+    private int hitGroup;
 
     public AttackEffect(float damage, float knockback, float x, float y, float width, float height, int direction,
-                        Map<AttackState, Animation<TextureRegion>> anims, Body body, World world) {
-        super(x, y, width, height, world, body);
+                        Map<AttackState, Animation<TextureRegion>> anims, World world) {
+        super(x, y, width, height, world);
         this.knockback = knockback;
         this.damage = damage;
         setDirection(direction);
         this.anims = anims;
+        init();
+    }
+
+    public AttackEffect(float damage, float knockback, float width, float height, int direction,
+                        Map<AttackState, Animation<TextureRegion>> anims, Body body) {
+        super(width, height, body);
+        this.knockback = knockback;
+        this.damage = damage;
+        setDirection(direction);
+        this.anims = anims;
+        init();
+    }
+
+    private void init() {
         stateTime = 0;
         state = AttackState.IDLE;
         rotation = 0;
         positionOffset = new Vector2();
+        hitCD = -1;
+        hitGroup = -1;
+    }
+
+    public void setHitCD(float hitCD) {
+        this.hitCD = hitCD;
+    }
+
+    public float getHitGroupCD() {
+        return hitCD;
+    }
+
+    public void setHitGroup(int hitGroup) {
+        this.hitGroup = hitGroup;
+    }
+
+    public int getHitGroup() {
+        return hitGroup;
     }
 
     @Override

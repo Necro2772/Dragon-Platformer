@@ -15,6 +15,8 @@ public class Firebreath extends Projectile {
         this.windForce = new Vector2(aimDirection).scl(-1f);
         float angle = 120;
         curve = (float) Math.random() * angle - angle / 2;
+        setHitCD(0.5f);
+        setHitGroup(1);
     }
 
     @Override

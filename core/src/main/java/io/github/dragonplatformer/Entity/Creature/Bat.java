@@ -19,6 +19,7 @@ public class Bat extends Enemy {
         setPlayerSensorShape(new Vector2(15, 20), new Vector2(0, 0));
         init();
         stats().init(1);
+        setLoot(2);
         getBody().setGravityScale(0.75f);
         prevPos = 0;
         waitTime = (float) Math.random() * 2 + 1;
@@ -30,7 +31,7 @@ public class Bat extends Enemy {
         super.act(delta);
         if (getState() == EnemyState.DEATH) return;
 
-        float horizontalSpeed = 3;
+        float horizontalSpeed = 2;
 
         Vector2 pos = getBody().getPosition();
         Vector2 vel = getBody().getLinearVelocity();
@@ -41,12 +42,14 @@ public class Bat extends Enemy {
                         setState(EnemyState.ATTACKING);
                         waitTime = (float) Math.random() * 2 + 1;
                     }
-                    if (pos.y - getPlayerPos().y < 5) flapForce = 8f;
-                    if (vel.y < -2) getBody().applyForceToCenter(0, 10, true);
+                    if (pos.y - getPlayerPos().y < 5) flapForce = 6f;
+                    if (vel.y < -2) getBody().applyForceToCenter(0, 8, true);
+                    getBody().applyForceToCenter(-vel.x * 2, 0, true);
                     break;
                 case ATTACKING:
                     flapForce = 0;
-                    if (getStateTime() > 0.5f) setState(EnemyState.IDLE);
+                    getBody().applyForceToCenter(0, 9.8f, true);
+                    if (getStateTime() > 1.5f) setState(EnemyState.IDLE);
                     break;
             }
         } else {
@@ -81,6 +84,7 @@ public class Bat extends Enemy {
             case ATTACKING:
                 Vector2 dir = new Vector2(getPlayerPos());
                 dir.sub(getBody().getPosition()).nor().scl(12);
+                dir.y -= 3;
                 getBody().applyLinearImpulse(dir.sub(getBody().getLinearVelocity()), getBody().getPosition(), true);
                 break;
         }

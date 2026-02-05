@@ -14,6 +14,7 @@ public class SpikyLizard extends Enemy {
         setPlayerSensorShape(new Vector2(16, 8));
         init();
         stats().init(10);
+        setLoot(10);
     }
 
     @Override

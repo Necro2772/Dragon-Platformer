@@ -9,7 +9,7 @@ import java.util.Map;
 
 public abstract class AttackVisual extends AttackEffect {
     public AttackVisual(float x, float y, float width, float height, int direction, Map<AttackState, Animation<TextureRegion>> anims, World world) {
-        super(0, 0, x, y, width, height, direction, anims, null, world);
+        super(0, 0, x, y, width, height, direction, anims, world);
     }
 
     @Override

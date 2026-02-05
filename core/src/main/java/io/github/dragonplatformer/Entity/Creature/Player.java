@@ -1,9 +1,9 @@
 package io.github.dragonplatformer.Entity.Creature;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import io.github.dragonplatformer.Entity.AnimationManager;
@@ -35,7 +35,6 @@ public class Player extends Creature {
 
         setAsPlayer();
         setHitboxShape(new Vector2(1f, 1f));
-        setDensity(0.225f * 2.25f);
         init();
 
         FixtureDef itemPickupDef = new FixtureDef();
@@ -73,8 +72,8 @@ public class Player extends Creature {
         }
         stats().updateCooldowns(delta);
         getInput().updateTimers(delta);
-        int direction = input.getInputDirection();
-        if (direction != 0 && getDirection() != direction && getState().canRotate) setDirection(direction);
+        if (input.getInputDirection() != 0 && getDirection() != input.getInputDirection() && getState().canRotate)
+            setDirection(input.getInputDirection());
         updatePlayerState();
         updatePlayerMovement(delta);
         if (stats().getProjectileCD() <= 0 && getInput().getProjectile()) projectileStart();
@@ -99,15 +98,13 @@ public class Player extends Creature {
             getInput().soarCharge = 0;
             getInput().glideCharge = 0;
         }
-        if (getInput().jump && getInput().numJumps > 0 && !getState().isJump) {
-            if (input.glide) {
-                if (getState() == PlayerState.DIVING) {
-                    nextState = PlayerState.DASHDIVE;
-                } else if (getInput().getInputDirection() != 0 && !getInput().upMove) {
-                    nextState = PlayerState.DASH;
-                } else nextState = PlayerState.JUMPING;
-            } else nextState = PlayerState.JUMPING;
-            getInput().numJumps--;
+        if (getInput().jump && !getState().isDash) {
+            if (input.glide && getInput().getInputDirection() != 0 && !getInput().upMove) {
+//                if (getState() == PlayerState.DIVING) {
+//                    nextState = PlayerState.DASHDIVE;
+//                } else
+                nextState = PlayerState.DASH;
+            } else if (getInput().numJumps > 0) nextState = PlayerState.JUMPING;
             input.setJump(false);
         }
         if (nextState == PlayerState.IDLE) {
@@ -122,110 +119,111 @@ public class Player extends Creature {
 
     private void updatePlayerMovement(float delta) {
         float maxVelocity = 12;
-        //float glideVelocity = 11;
         float diveGlideVelocity = 50;
         Vector2 vel = getBody().getLinearVelocity();
-        Vector2 pos = getBody().getPosition();
-        float accel = 1.5f;
+        float accel = 0.75f;
 
         switch (state) {
             case DIVING:
-                if (vel.y < 0) {
-                    getInput().chargeSoar(delta);
-                    getInput().chargeGlide(delta);
-                }
-                if (vel.y > -25) {
-                    getBody().applyLinearImpulse(0, -3f, pos.x, pos.y, true);
+                if (vel.y > -23) {
+                    applyWeightedImpulse(0, -0.6f);
                 } else {
                     getBody().applyForceToCenter(0, 9.8f, true);
                 }
+            case DASHDIVE:
+            case ATTACKDIVE:
+                if (vel.y < 0) {
+                    getInput().chargeSoar(-delta * vel.y / 20);
+                    getInput().chargeGlide(-delta * vel.y / 20);
+                }
                 break;
             case DIVESOAR:
-                getInput().chargeSoar(-delta);
-                getInput().chargeGlide(-delta);
+                getInput().chargeSoar(-delta * vel.y / 20);
+                getInput().chargeGlide(-delta * vel.y / 20);
                 if (getInput().soarCharge > 0.5f) {
-                    if (vel.y < 25) {
-                        getBody().applyLinearImpulse(0, 5, pos.x, pos.y, true);
+                    if (vel.y < 23) {
+                        applyWeightedImpulse(0, 2.0f);
                     }
                 } else if (getInput().soarCharge > 0.1f) {
-                    if (vel.y < 20) {
-                        getBody().applyLinearImpulse(0, 4, pos.x, pos.y, true);
+                    if (vel.y < 18) {
+                        applyWeightedImpulse(0, 1.5f);
                     }
                 }
                 break;
             case GLIDING:
                 if (getInput().glideCharge > 0.1f) {
                     if (Math.abs(vel.x) < diveGlideVelocity && (getInput().leftMove || getInput().rightMove)) {
-                        getBody().applyLinearImpulse(
-                            getDirection() * Math.max(getInput().glideCharge, 0.7f) * 4,
-                            Math.max(getInput().glideCharge, 0.7f) * 2,
-                            pos.x, pos.y, true);
+                        applyWeightedImpulse(
+                            getDirection() * Math.max(getInput().glideCharge, 0.7f) * 2,
+                            Math.max(getInput().glideCharge, 0.7f) * 1.5f);
                     }
                 }
                 getInput().chargeGlide(getInput().glideCharge * delta * -10);
                 getInput().chargeSoar(delta * -0.1f);
                 if (vel.y < -1 && Math.abs(vel.x) > 0.7f) {
-                    getBody().applyLinearImpulse(0, -vel.y / 6, pos.x, pos.y, true);
+                    applyWeightedImpulse(0, -vel.y / 12);
                 }
                 break;
             case DASH:
-                if (Math.abs(vel.x) > 20) getBody().applyLinearImpulse(getDirection() * -2, 0, pos.x, pos.y, true);
+                if (Math.abs(vel.x) > 5f) applyWeightedImpulse(-getDirection() * 2, 0);
+                getBody().applyForceToCenter(0, 9.8f, true);
                 break;
             case JUMPING:
             case FLYING:
+                getInput().chargeGlide(getInput().glideCharge * delta * -10);
+                getInput().chargeSoar(delta * -0.1f);
                 if (vel.y > 0 && input.downMove) getBody().applyForceToCenter(0, -20, true);
                 else if (vel.y > 0) getBody().applyForceToCenter(0, -10, true);
                 break;
         }
-        if (Math.abs(vel.x) > maxVelocity * 1.5f) getBody().applyLinearImpulse(getDirection() * -2, 0, pos.x, pos.y, true);
+        if (Math.abs(vel.x) > maxVelocity * 1.5f) applyWeightedImpulse(-getDirection(), 0);
         else if (Math.abs(vel.x) > maxVelocity) getBody().applyForceToCenter(getDirection() * -10, 0, true);
-        if (vel.y > 18) getBody().applyLinearImpulse(0, -4, pos.x, pos.y, true);
+        if (vel.y > 18) applyWeightedImpulse(0, -2);
 
-        if (state.isAttack()) { // Slowdown during attacks, otherwise normal left/right movement
-            if (isGrounded()) getBody().applyLinearImpulse(-vel.x / 10, 0, pos.x, pos.y, true);
-        } else if (getInput().getInputDirection() == 1 && vel.x < maxVelocity) {
-            getBody().applyLinearImpulse(accel, 0, pos.x, pos.y, true);
+        if (state.isAttack()) {
+            //if (isGrounded()) applyWeightedImpulse(-vel.x / 20, 0);
+            maxVelocity *= 0.6f;
+        }
+        if (getInput().getInputDirection() == 1 && vel.x < maxVelocity) {
+            applyWeightedImpulse(accel, 0);
         } else if (getInput().getInputDirection() == -1 && vel.x > -maxVelocity) {
-            getBody().applyLinearImpulse(-accel, 0, pos.x, pos.y, true);
+            applyWeightedImpulse(-accel, 0);
         } else if ((getInput().getInputDirection() == 0 && vel.x != 0) || (Math.abs(vel.x) > maxVelocity && isGrounded())) {
-            getBody().applyLinearImpulse(-vel.x / 20, 0, pos.x, pos.y, true);
+            applyWeightedImpulse(-vel.x / 40, 0);
         }
         // Idle ground slowdown
-        if (isGrounded() && Math.abs(vel.x) > 1 && getInput().getInputDirection() == 0) {
-            getBody().applyLinearImpulse(-vel.x / 6, 0, pos.x, pos.y, true);
+        if (isGrounded() && Math.abs(vel.x) > 0.5f && getInput().getInputDirection() == 0) {
+            applyWeightedImpulse(-vel.x / 6, 0);
         }
+        if (isGrounded() && getInput().getInputDirection() == 0 && Math.abs(vel.x) < 0.5f)
+            getBody().setLinearVelocity(0, vel.y);
         if (getInput().jump) input.setJump(false);
-    }
-
-    private void endState() {
-        Vector2 pos = getBody().getPosition();
-        if (getState() == PlayerState.DIVESOAR) {
-            input.chargeSoar(-0.1f);
-        }
     }
 
     private void beginState() {
         Vector2 vel = getBody().getLinearVelocity();
         Vector2 pos = getBody().getPosition();
+        input.resetMeleeHit();
         switch(state) {
             case JUMPING:
-//                if (isGrounded() && (input.upMove || getInput().glide))
-//                    getBody().applyLinearImpulse(0, 1.3f * stats().jumpForce - vel.y * 1.8f, pos.x, pos.y, true);
-                float jumpForce = 50;
-                if (input.downMove)
-                    getBody().applyLinearImpulse(0, 0.7f * jumpForce - vel.y * 1.8f, pos.x, pos.y, true);
-                else getBody().applyLinearImpulse(0, jumpForce - vel.y * 1.8f, pos.x, pos.y, true);
+                float jumpForce = 25;
+                if (input.downMove) applyWeightedImpulse(0, 0.7f * jumpForce - vel.y * 0.9f);
+                else applyWeightedImpulse(0, jumpForce - vel.y * 0.9f);
+                getInput().numJumps--;
                 break;
             case DASHDIVE:
-                getBody().applyLinearImpulse(0, -40 - vel.y, pos.x, pos.y, true);
+                new Claw(1, 3, 6, 4.5f, new Vector2(0, -2),
+                    getDirection(), animManager, getBody());
+                applyWeightedImpulse(-vel.x * 0.75f, -25 - vel.y);
                 break;
             case DASH:
                 new ProjectileShootVisual(pos.x, pos.y, getDirection(), animManager, getBody().getWorld());
-                getBody().applyLinearImpulse(getDirection() * 80 - vel.x * 1.8f, 10, pos.x, pos.y, true);
+                applyWeightedImpulse(getDirection() * 60 - vel.x, -vel.y * 0.5f);
+//                new Claw(1, 3, 3, 3, new Vector2(2f * getDirection(), 0),
+//                    getDirection(), animManager, getBody());
                 break;
-            case ATTACKUP:
-                new Claw(1, 3, 4, 4, new Vector2(2f * getDirection(), 2),
-                    getDirection(), animManager, getBody());
+            case DIVESOAR:
+                if (input.soarCharge > 0.13f) input.soarCharge = Math.max(input.soarCharge - 0.4f, 0.13f);
                 break;
             case ATTACKFORWARD:
                 new Claw(1, 1, 4, 4, new Vector2(3f * getDirection(), 0),
@@ -240,10 +238,83 @@ public class Player extends Creature {
                     getDirection(), animManager, getBody());
                 break;
             case ATTACKDOWN:
-                new Claw(1, 3, 4, 4, new Vector2(2f * getDirection(), -2),
+                new Claw(1, 3, 5, 3, new Vector2(0.5f * getDirection(), -2),
                     getDirection(), animManager, getBody());
                 break;
+            case ATTACKUP:
+                new Claw(1, 3, 6, 4.5f, new Vector2(0, 2),
+                    getDirection(), animManager, getBody());
+                break;
+//            case ATTACKJUMP:
+//                new Claw(1, 3, 3, 3, new Vector2(2f * getDirection(), 0),
+//                    getDirection(), animManager, getBody());
+//                break;
+//            case ATTACKGLIDE:
+//                new Claw(1, 3, 3, 3, new Vector2(2f * getDirection(), -2),
+//                    getDirection(), animManager, getBody());
+//                break;
         }
+    }
+
+    private void endState() {
+        Vector2 vel = getBody().getLinearVelocity();
+        if (getState() == PlayerState.DASH) {
+            getBody().setLinearVelocity(MathUtils.clamp(vel.x, -5, 5), vel.y);
+        }
+    }
+
+    public void setState(PlayerState state, boolean force) {
+        if (force) {
+            this.state = null;
+            bufferedState = null;
+        }
+        setState(state);
+    }
+
+    public void setState(PlayerState state) {
+        if (state == this.getState()) return;
+        if (bufferedState != null && !(getState().isAttackCancelable() && state.isAttack)) {
+            switch (getState()) {
+                case ATTACKFORWARD:
+                    if (state == PlayerState.ATTACKFORWARD2) bufferedState = state;
+                case ATTACKFORWARD2:
+                    if (state == PlayerState.ATTACKFORWARD) bufferedState = state;
+                case ATTACKFORWARD3:
+                case ATTACKDOWN:
+                case ATTACKUP:
+                    if (state == PlayerState.JUMPING) bufferedState = state;
+                    break;
+                case JUMPING:
+                    if (state.isAttack()) bufferedState = state;
+            }
+            return;
+        }
+
+        switch (state) {
+            case JUMPING:
+                bufferedState = PlayerState.FLYING;
+                break;
+            case DASHDIVE:
+                bufferedState = PlayerState.DIVING;
+                break;
+            case DASH:
+                bufferedState = PlayerState.GLIDING;
+                break;
+            case DEATH:
+                break;
+            default:
+                if (anims.get(state).getPlayMode() == Animation.PlayMode.NORMAL) {
+                    if (isGrounded()) bufferedState = PlayerState.IDLE;
+                    else bufferedState = PlayerState.FLYING;
+                }
+        }
+
+        endState();
+        this.state = state;
+        stateTime = 0;
+        if (input.getInputDirection() != 0 && getDirection() != input.getInputDirection())
+            setDirection(input.getInputDirection());
+        beginState();
     }
 
     @Override
@@ -315,10 +386,27 @@ public class Player extends Creature {
     }
 
     public void meleeHitEffect() {
-        input.meleeHit++;
         if (input.meleeHit == 0) {
-
+            Vector2 vel = getBody().getLinearVelocity();
+            switch (getState()) {
+                case ATTACKDOWN:
+                    //getBody().applyLinearImpulse(0, 10 - vel.y, pos.x, pos.y, true);
+                    break;
+                case ATTACKFORWARD:
+                case ATTACKFORWARD2:
+                    applyWeightedImpulse(-getDirection() * 0.75f, 0);
+                    break;
+                case ATTACKFORWARD3:
+                    applyWeightedImpulse(-getDirection() * 2, 0);
+                    break;
+//                case DASH:
+//                    applyWeightedImpulse(-vel.x - getDirection(), -vel.y);
+//                case ATTACKGLIDE:
+//                    getBody().applyLinearImpulse(getDirection() * 5, 20 - vel.y * 2, pos.x, pos.y, true);
+//                    break;
+            }
         }
+        input.meleeHit++;
     }
 
     public void recoil(Vector2 attackOrigin, float intensity) {
@@ -329,50 +417,6 @@ public class Player extends Creature {
     @Override
     public void death() {
         screen.gameOver();
-    }
-
-    public void setState(PlayerState state) {
-        if (state == this.getState()) return;
-        if (bufferedState != null) {
-            switch (this.state) {
-                case ATTACKFORWARD:
-                    if (state == PlayerState.ATTACKFORWARD2) bufferedState = state;
-                case ATTACKFORWARD2:
-                    if (state == PlayerState.ATTACKFORWARD3) bufferedState = state;
-                case ATTACKFORWARD3:
-                case ATTACKDOWN:
-                case ATTACKUP:
-                    if (state == PlayerState.JUMPING) bufferedState = state;
-                    break;
-                case JUMPING:
-                    if (state.isAttack()) bufferedState = state;
-            }
-            return;
-        }
-
-        switch (state) {
-            case JUMPING:
-                bufferedState = PlayerState.FLYING;
-                break;
-            case DASHDIVE:
-                bufferedState = PlayerState.DIVING;
-                break;
-            case DASH:
-                bufferedState = PlayerState.GLIDING;
-                break;
-            case ATTACKDOWN:
-            case ATTACKFORWARD:
-            case ATTACKFORWARD2:
-            case ATTACKFORWARD3:
-            case ATTACKUP:
-                if (isGrounded()) bufferedState = PlayerState.IDLE;
-                else bufferedState = PlayerState.FLYING;
-        }
-
-        endState();
-        this.state = state;
-        stateTime = 0;
-        beginState();
     }
 
     public PlayerState getState() {
@@ -399,7 +443,7 @@ public class Player extends Creature {
         if (getState() == PlayerState.ATTACKFORWARD) {
             setState(PlayerState.ATTACKFORWARD2);
         } else if (getState() == PlayerState.ATTACKFORWARD2) {
-            setState(PlayerState.ATTACKFORWARD3);
+            setState(PlayerState.ATTACKFORWARD);
         } else if (input.downMove && !isGrounded()) {
             setState(PlayerState.ATTACKDOWN);
         } else if (input.upMove) {
@@ -413,17 +457,17 @@ public class Player extends Creature {
         Projectile projectile;
         Vector2 pos = new Vector2(getBody().getPosition().x + getDirection() * 2, getBody().getPosition().y - 0.25f);
         Vector2 impulse = new Vector2(stats.projectileSpeed * getDirection(), 0);
-        if (input.upMove) impulse.y = stats.projectileSpeed * 0.5f;
-        else if (input.downMove) impulse.y = -stats.projectileSpeed * 0.5f;
+        if (input.upMove) impulse.y = stats.projectileSpeed;
+        else if (input.downMove) impulse.y = -stats.projectileSpeed;
         switch (type) {
             case FIREBREATH:
                 projectile = new Firebreath(0.5f, 0f, 1f, impulse, 0.5f - input.breathCount / 30, pos.x, pos.y,
                     2f, 1, getDirection(), animManager, true, getBody().getWorld());
-                impulse.rotateDeg((float) Math.random() * 40 - 20);
+                impulse.rotateDeg((float) Math.random() * 60 - 30);
                 impulse.scl(0.6f, 0.9f);
                 break;
             case FIREBALL_LARGE:
-                projectile = new Fireball(4, 5, 5, pos.x, pos.y, 3, 1,
+                projectile = new ExplosiveFireball(4, 5, 5, pos.x, pos.y, 3, 1,
                     getDirection(), animManager, true, getBody().getWorld());
                 recoil(new Vector2(getBody().getPosition().add(impulse)), 30);
                 new ProjectileShootVisual(pos.x - getDirection(), pos.y, getDirection(), animManager, getBody().getWorld())
@@ -445,14 +489,15 @@ public class Player extends Creature {
         projectile.setRotation(impulse.angleDeg());
     }
 
-    public void projectileStart() { // TODO: test out preventing diving / soaring while using projectiles?
+    public void projectileStart() {
         switch (upgrades.projectile) {
             case FIREBALL_LARGE:
                 return;
             case FIREBREATH:
                 if (getInput().projectileCharge > 0.25f) {
                     shootProjectile(Upgrade.FIREBREATH);
-                    stats().resetProjectileCD(0.05f + (getInput().breathCount) / 80);
+                    //stats().resetProjectileCD(0.05f + (getInput().breathCount) / 80);
+                    stats().resetProjectileCD(0.05f);
                 }
                 return;
             case FIREBALL_BASIC:
@@ -463,15 +508,15 @@ public class Player extends Creature {
     }
 
     public void projectileRelease(float charge) {
-        if (stats().projectileCD > 0) return;
+        //if (stats().projectileCD > 0) return;
         switch (upgrades.projectile) {
             case FIREBREATH:
             case FIREBALL_LARGE:
-                if (charge > 1) {
+                if (charge > 0.8f) {
                     shootProjectile(Upgrade.FIREBALL_LARGE);
-                } else if (charge > 0.5) {
+                } else if (charge > 0.4) {
                     shootProjectile(Upgrade.FIREBALL_MEDIUM);
-                } else {
+                } else if (stats().projectileCD <= 0){
                     shootProjectile(Upgrade.FIREBALL_BASIC);
                 }
                 stats().resetProjectileCD();
@@ -493,38 +538,57 @@ public class Player extends Creature {
         DIVING,
         DIVESOAR,
         DASH (false, true),
-        DASHDIVE (false, true),
+        DASHDIVE (true),
         ATTACKFORWARD (true),
         ATTACKFORWARD2 (true),
         ATTACKFORWARD3 (true),
         ATTACKUP (true),
         ATTACKDOWN (true),
+        ATTACKDIVE (true),
+        ATTACKDASH (true),
+        ATTACKGLIDE (true),
+        ATTACKJUMP (true),
         DEATH;
 
         private final boolean canRotate;
         private final boolean isAttack;
-        private final boolean isJump;
+        private final boolean isDash;
+        private final boolean attackCancelable;
 
         PlayerState() {
             this.canRotate = true;
             this.isAttack = false;
-            this.isJump = false;
+            this.isDash = false;
+            this.attackCancelable = false;
         }
 
         PlayerState(boolean isAttack) {
             this.canRotate = !isAttack;
             this.isAttack = isAttack;
-            this.isJump = false;
+            this.isDash = false;
+            this.attackCancelable = false;
         }
 
-        PlayerState(boolean isAttack, boolean isJump) {
-            this.canRotate = !isAttack && !isJump;
+        PlayerState(boolean isAttack, boolean isDash) {
+            this.canRotate = !isAttack && !isDash;
             this.isAttack = isAttack;
-            this.isJump = isJump;
+            this.isDash = isDash;
+            this.attackCancelable = isDash;
+        }
+
+        PlayerState(boolean isAttack, boolean isDash, boolean isCancelable) {
+            this.canRotate = !isAttack && !isDash;
+            this.isAttack = isAttack;
+            this.isDash = isDash;
+            this.attackCancelable = isCancelable;
         }
 
         public boolean isAttack() {
             return isAttack;
+        }
+
+        public boolean isAttackCancelable() {
+            return attackCancelable;
         }
     }
 
@@ -577,7 +641,7 @@ public class Player extends Creature {
             glide = false;
             projectile = false;
 
-            numJumps = 1;
+            numJumps = 4;
             soarCharge = 0;
             glideCharge = 0;
             projectileCharge = 0;

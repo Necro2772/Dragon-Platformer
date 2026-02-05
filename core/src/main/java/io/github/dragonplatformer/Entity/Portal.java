@@ -11,7 +11,7 @@ public class Portal extends Entity {
     public final GameScreen screen;
 
     public Portal(float x, float y, float width, float height, World world, String destination, GameScreen screen) {
-        super(x, y, width, height, world, null);
+        super(x, y, width, height, world);
         getBody().setType(BodyDef.BodyType.StaticBody);
         this.destination = destination;
         this.screen = screen;
