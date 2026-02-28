@@ -1,17 +1,12 @@
 package io.github.dragonplatformer;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.graphics.g3d.Renderable;
-import com.badlogic.gdx.graphics.g3d.Shader;
-import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
-import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.MapObjects;
@@ -32,6 +27,8 @@ import io.github.dragonplatformer.Entity.*;
 import io.github.dragonplatformer.Entity.AttackEffect.AttackEffect;
 import io.github.dragonplatformer.Entity.Creature.*;
 
+import java.util.ArrayList;
+
 
 public class GameScreen implements Screen {
     private final Main game;
@@ -51,6 +48,10 @@ public class GameScreen implements Screen {
     private final ShaderProgram hitShader;
     private float shaderTimer;
     private boolean debug;
+    private final ArrayList<CameraArea> cameraAreas;
+    private int currentCameraArea;
+    private CameraArea cameraInterpolationArea;
+    private float cameraInterpolationTime;
 
     public GameScreen(final Main game, final TiledMap map) {
         this.game = game;
@@ -63,6 +64,10 @@ public class GameScreen implements Screen {
         world = new World(new Vector2(0, -9.8f), true);
         debug = false;
         shaderTimer = 0;
+        cameraAreas = new ArrayList<>();
+        cameraInterpolationArea = null;
+        cameraInterpolationTime = 0;
+        currentCameraArea = -1;
         hitShader = new ShaderProgram(
             "attribute highp vec4 a_position;\n" +
             "attribute highp vec4 a_color;\n" +
@@ -158,7 +163,6 @@ public class GameScreen implements Screen {
                 }
             }
         }
-
         MapObjects collisionObjects = this.map.getLayers().get("Collision").getObjects();
         for (int i = 0; i < collisionObjects.getCount(); i++) {
             MapObject object = collisionObjects.get(i);
@@ -197,6 +201,18 @@ public class GameScreen implements Screen {
                 circleShape.dispose();
             }
         }
+        if (map.getLayers().get("Camera") != null) {
+            MapObjects cameraViews = this.map.getLayers().get("Camera").getObjects();
+            for (int i = 0; i < cameraViews.getCount(); i++) {
+                MapObject cameraView = cameraViews.get(i);
+                cameraAreas.add(new CameraArea(
+                    (float) cameraView.getProperties().get("x") * tiledMapRenderer.getUnitScale(),
+                    (float) cameraView.getProperties().get("y") * tiledMapRenderer.getUnitScale(),
+                    (float) cameraView.getProperties().get("width") * tiledMapRenderer.getUnitScale(),
+                    (float) cameraView.getProperties().get("height") * tiledMapRenderer.getUnitScale()
+                ));
+            }
+        }
     }
 
     @Override
@@ -213,9 +229,9 @@ public class GameScreen implements Screen {
                 e.act(delta);
             }
         }
+        if (cameraInterpolationTime > 0) cameraInterpolationTime -= delta;
         updateCamera();
         draw();
-
         debugRenderer.render(world, game.viewport.getCamera().combined);
         world.step(1/60f, 6, 2);
     }
@@ -230,16 +246,61 @@ public class GameScreen implements Screen {
     }
 
     private void updateCamera() {
-        game.viewport.getCamera().position.x = MathUtils.clamp(
-            player.getBody().getPosition().x,
-            game.viewport.getWorldWidth() / 2f,
-            map.getProperties().get("width", Integer.class) - game.viewport.getWorldWidth() / 2f
-        );
-        game.viewport.getCamera().position.y = MathUtils.clamp(
-            player.getBody().getPosition().y,
-            game.viewport.getWorldHeight() / 2f,
-            map.getProperties().get("height", Integer.class) - game.viewport.getWorldHeight() / 2f
-        );
+        float cameraWidth = 42;
+        float cameraHeight = 24;
+        float interpolationDuration = 1;
+        if (currentCameraArea != -1 &&
+            !cameraAreas.get(currentCameraArea).contains(player.getBody().getPosition())) {
+            cameraInterpolationArea = cameraAreas.get(currentCameraArea);
+            cameraInterpolationTime = interpolationDuration;
+            currentCameraArea = -1;
+        }
+        if (currentCameraArea == -1) {
+            for (int i = 0; i < cameraAreas.size(); i++) {
+                if (cameraAreas.get(i).contains(player.getBody().getPosition())) {
+                    if (cameraInterpolationArea != null) cameraInterpolationTime = interpolationDuration;
+                    cameraInterpolationArea = new CameraArea(
+                        game.viewport.getCamera().position.x - game.viewport.getMinWorldWidth() / 2,
+                        game.viewport.getCamera().position.y - game.viewport.getMinWorldHeight() / 2,
+                        game.viewport.getMinWorldWidth(),
+                        game.viewport.getMinWorldHeight()
+                    );
+                    currentCameraArea = i;
+                    break;
+                }
+            }
+        }
+        Camera camera = game.viewport.getCamera();
+        if (currentCameraArea == -1) {
+            camera.position.x = MathUtils.clamp(
+                player.getBody().getPosition().x,
+                game.viewport.getWorldWidth() / 2f,
+                map.getProperties().get("width", Integer.class) - game.viewport.getWorldWidth() / 2f
+            );
+            camera.position.y = MathUtils.clamp(
+                player.getBody().getPosition().y,
+                game.viewport.getWorldHeight() / 2f,
+                map.getProperties().get("height", Integer.class) - game.viewport.getWorldHeight() / 2f
+            );
+        } else {
+            CameraArea cameraArea = cameraAreas.get(currentCameraArea);
+            camera.position.x = cameraArea.getX();
+            camera.position.y = cameraArea.getY();
+            cameraWidth = cameraArea.getWidth();
+            cameraHeight = cameraArea.getHeight();
+        }
+        if (cameraInterpolationTime > 0) {
+            float progress = 1 - cameraInterpolationTime / interpolationDuration;
+            camera.position.x = progress * camera.position.x + (1 - progress) * cameraInterpolationArea.getX();
+            camera.position.y = progress * camera.position.y + (1 - progress) * cameraInterpolationArea.getY();
+            cameraWidth = progress * cameraWidth + (1 - progress) * cameraInterpolationArea.getWidth();
+            cameraHeight = progress * cameraHeight + (1 - progress) * cameraInterpolationArea.getHeight();
+        }
+        if (game.viewport.getMinWorldWidth() != cameraWidth || game.viewport.getMinWorldHeight() != cameraHeight) {
+            game.viewport.setMinWorldWidth(cameraWidth);
+            game.viewport.setMinWorldHeight(cameraHeight);
+            game.viewport.update(game.viewport.getScreenWidth(), game.viewport.getScreenHeight());
+        }
     }
 
     private void draw() {

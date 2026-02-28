@@ -22,6 +22,7 @@ public abstract class Enemy extends Creature {
     private boolean playerSighted;
     private boolean playerInRange;
     private Vector2 playerPos;
+    private Vector2 playerVel;
     private Vector2 spawnPoint;
     private final PlayerLOSRay losRay;
     private float aggroRange;
@@ -49,7 +50,8 @@ public abstract class Enemy extends Creature {
         stateTime = 0;
         playerSighted = false;
         spawnPoint = new Vector2(x, y);
-        updatePlayerPos(new Vector2(0,0));
+        playerPos = new Vector2(0, 0);
+        playerVel = new Vector2(0, 0);
         losRay = new PlayerLOSRay();
 
         playerSensorSize = new Vector2(15, 10);
@@ -145,6 +147,7 @@ public abstract class Enemy extends Creature {
             if (contactFixture.getUserData() instanceof Player) {
                 setPlayerInRange(true);
                 playerPos = contactFixture.getBody().getPosition();
+                playerVel = contactFixture.getBody().getLinearVelocity();
             }
         }
     }
@@ -212,8 +215,12 @@ public abstract class Enemy extends Creature {
         return playerPos;
     }
 
-    protected void updatePlayerPos(Vector2 playerPos) {
-        this.playerPos = playerPos;
+    protected Vector2 getPlayerVel() {
+        return playerVel;
+    }
+
+    protected Vector2 getPredictedPlayerPos(float time) {
+        return new Vector2(getPlayerPos()).add(new Vector2(getPlayerVel()).scl(time));
     }
 
     public Vector2 getSpawnPoint() {

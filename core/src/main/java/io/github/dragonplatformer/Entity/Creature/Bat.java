@@ -1,113 +1,122 @@
 package io.github.dragonplatformer.Entity.Creature;
 
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.Fixture;
-import com.badlogic.gdx.physics.box2d.RayCastCallback;
 import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.AnimationManager;
 
 public class Bat extends Enemy {
-    private float prevPos;
-    private float flapForce = 4f;
     private float waitTime;
+    private final float playerDist;
+    private Vector2 attackDirection;
 
     public Bat(float x, float y, World world, AnimationManager animManager) {
         super(x, y, 1f, 1f, world, animManager, AnimationManager.AnimationKeys.ENEMY_BAT);
-        //setHitboxShape(new Vector2(1.5f/2f, 1.5f/2f));
         setPlayerSensorShape(new Vector2(15, 20), new Vector2(0, 0));
         init();
         stats().init(1);
         setLoot(2);
         getBody().setGravityScale(0.75f);
-        prevPos = 0;
-        waitTime = (float) Math.random() * 2 + 1;
+        waitTime = (float) Math.random() * 5 + 5;
         setAggroRange(50);
+        playerDist = 10 + (float) Math.random() * 5;
+        attackDirection = new Vector2();
     }
 
     @Override
     public void act(float delta) {
         super.act(delta);
         if (getState() == EnemyState.DEATH) return;
-
-        float horizontalSpeed = 2;
-
+        Vector2 maxVel = new Vector2(12, 8);
+        Vector2 impulse = new Vector2(0, 0);
         Vector2 pos = getBody().getPosition();
-        Vector2 vel = getBody().getLinearVelocity();
+
         if (getPlayerSighted()) {
+            Vector2 predictedPos = getPredictedPlayerPos(anims.get(getState()).getAnimationDuration() * 2);
             switch (getState()) {
                 case IDLE:
-                    if (getStateTime() > waitTime) {
+                    if (waitTime <= 0) {
                         setState(EnemyState.ATTACKING);
-                        waitTime = (float) Math.random() * 2 + 1;
+                        waitTime = (float) Math.random() * 5 + 5;
+                    } else if (getPlayerSighted()) {
+                        impulse.x = 4;
+                        waitTime -= delta;
+                        float predictedDist = new Vector2(pos).sub(predictedPos).len();
+                        float currentDist = new Vector2(pos).sub(getPlayerPos()).len();
+
+                        if (playerDist - predictedDist < 0) maxVel.x = 3;
+                        else maxVel.x = (playerDist - predictedDist) / playerDist * 3 + 5;
+                        if (pos.x < getPlayerPos().x) maxVel.x *= -1;
+                        if (currentDist > playerDist) {
+                            maxVel.x *= -1;
+                        }
+                        if (pos.y - getPlayerPos().y < 5) {
+                            impulse.y = 5;
+                        } else if (pos.y - getPlayerPos().y > 7) {
+                            impulse.y = -3f;
+                            maxVel.y *= -1;
+                        }
                     }
-                    if (pos.y - getPlayerPos().y < 5) flapForce = 6f;
-                    if (vel.y < -2) getBody().applyForceToCenter(0, 8, true);
-                    getBody().applyForceToCenter(-vel.x * 2, 0, true);
                     break;
                 case ATTACKING:
-                    flapForce = 0;
-                    getBody().applyForceToCenter(0, 9.8f, true);
                     if (getStateTime() > 1.5f) setState(EnemyState.IDLE);
+                    float speed = 20;
+                    float accel = 5;
+                    impulse = new Vector2(attackDirection).scl(accel);
+                    maxVel = new Vector2(attackDirection).scl(speed);
+                    getBody().applyForceToCenter(0, -getBody().getGravityScale(), true);
                     break;
             }
         } else {
             setState(EnemyState.IDLE);
-            getBody().applyForceToCenter(-vel.x * 2, 0, true);
         }
+        getBody().applyForceToCenter(new Vector2(getBody().getLinearVelocity()).scl(-1/2f), true);
+        flapMovementUpdate(delta, impulse, maxVel);
+    }
+
+    /**
+     * Updates movement for a flying creature by sending impulses on frame 1 until velocity is at maxVel.
+     * Call from act() every frame while this movement type is active.
+     * @param delta time since the last update in seconds.
+     * @param impulse amount by which velocity should change. Negative values are ignored and changed to positive.
+     * @param maxVel velocity to increase speed towards. Negative values cause impulses to occur in negative directions.
+     */
+    public void flapMovementUpdate(float delta, Vector2 impulse, Vector2 maxVel) {
+        Vector2 vel = getBody().getLinearVelocity();
         if (anims.get(getState()).getKeyFrameIndex(getStateTime()) == 0 &&
-            anims.get(getState()).getKeyFrameIndex(getStateTime() + delta) == 1 ) {
-            if (prevPos != 0) {
-                flapForce += MathUtils.clamp(prevPos - pos.y, -2, 2);
-                flapForce = MathUtils.clamp(flapForce, -2, 12);
+            anims.get(getState()).getKeyFrameIndex(getStateTime() + delta) == 1) {
+            impulse.x = Math.abs(impulse.x);
+            impulse.y = Math.abs(impulse.y);
+            if (maxVel.x > 0) {
+                if (vel.x < maxVel.x) {
+                    applyWeightedImpulse(impulse.x, 0);
+                }
+            } else if (maxVel.x < 0) {
+                if (vel.x > maxVel.x) {
+                    applyWeightedImpulse(-impulse.x, 0);
+                }
             }
-            StaticRayCast rayCast = new StaticRayCast();
-            getBody().getWorld().rayCast(rayCast, pos, new Vector2(0, -5).add(pos));
-            if (rayCast.hit) flapForce += 1;
-            else {
-                getBody().getWorld().rayCast(rayCast, pos, new Vector2(0, 5).add(pos));
-                if (rayCast.hit) flapForce -= 1;
+            if (vel.y < 0 && maxVel.y >= 0) {
+                applyWeightedImpulse(0, -vel.y * 2);
             }
-            if (getState() != EnemyState.ATTACKING && Math.abs(pos.x - getPlayerPos().x) < 5) {
-                if (pos.x < getPlayerPos().x) horizontalSpeed *= 1;
-            } else horizontalSpeed = 0;
-            getBody().applyLinearImpulse(new Vector2(horizontalSpeed, flapForce * getBody().getMass()), pos, true);
-            prevPos = pos.y;
+            if (maxVel.y > 0) {
+                if (vel.y < maxVel.y) {
+                    applyWeightedImpulse(0, impulse.y);
+                }
+            } else if (maxVel.y < 0) {
+                if (vel.y > maxVel.y) {
+                    applyWeightedImpulse(0, -impulse.y);
+                }
+            }
         }
     }
 
     @Override
     public void beginState() {
         super.beginState();
-        switch (getState()) {
-            case ATTACKING:
-                Vector2 dir = new Vector2(getPlayerPos());
-                dir.sub(getBody().getPosition()).nor().scl(12);
-                dir.y -= 3;
-                getBody().applyLinearImpulse(dir.sub(getBody().getLinearVelocity()), getBody().getPosition(), true);
-                break;
-        }
-    }
-
-    private static class StaticRayCast implements RayCastCallback {
-        public boolean hit;
-
-        public StaticRayCast(){
-            super();
-        }
-
-        public void reset() {
-            hit = false;
-        }
-
-        @Override
-        public float reportRayFixture(Fixture fixture, Vector2 point, Vector2 normal, float fraction) {
-            if (fixture.getBody().getType() == BodyDef.BodyType.StaticBody) {
-                hit = true;
-                return 0;
-            }
-            return -1;
+        if (getState() == EnemyState.ATTACKING) {
+            attackDirection = new Vector2(getPlayerPos());
+            attackDirection.sub(getBody().getPosition());
+            attackDirection.nor();
         }
     }
 }

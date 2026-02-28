@@ -131,11 +131,11 @@ public class AnimationManager {
                 case ENEMY_BAT:
                     enemyAnimations.put(key, Map.ofEntries(
                         Map.entry(Enemy.EnemyState.IDLE, new Animation<>(
-                            1 / 3f,
+                            1 / 4f,
                             atlas.findRegions("bat_idle"),
                             Animation.PlayMode.LOOP
                         )), Map.entry(Enemy.EnemyState.ATTACKING, new Animation<>(
-                            1 / 5f,
+                            1 / 6f,
                             atlas.findRegions("bat_idle"),
                             Animation.PlayMode.LOOP
                         ))
