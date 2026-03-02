@@ -246,12 +246,18 @@ public class GameScreen implements Screen {
     }
 
     private void updateCamera() {
-        float cameraWidth = 42;
-        float cameraHeight = 24;
+        OrthographicCamera camera = (OrthographicCamera) game.viewport.getCamera();
+        float viewportWidth = game.viewport.getMinWorldWidth();
+        float viewportHeight = game.viewport.getMinWorldHeight();
         float interpolationDuration = 1;
         if (currentCameraArea != -1 &&
             !cameraAreas.get(currentCameraArea).contains(player.getBody().getPosition())) {
-            cameraInterpolationArea = cameraAreas.get(currentCameraArea);
+            cameraInterpolationArea = new CameraArea(
+                camera.position.x - viewportWidth * camera.zoom / 2,
+                camera.position.y - viewportHeight * camera.zoom / 2,
+                viewportWidth * camera.zoom,
+                viewportHeight * camera.zoom
+            );
             cameraInterpolationTime = interpolationDuration;
             currentCameraArea = -1;
         }
@@ -260,46 +266,47 @@ public class GameScreen implements Screen {
                 if (cameraAreas.get(i).contains(player.getBody().getPosition())) {
                     if (cameraInterpolationArea != null) cameraInterpolationTime = interpolationDuration;
                     cameraInterpolationArea = new CameraArea(
-                        game.viewport.getCamera().position.x - game.viewport.getMinWorldWidth() / 2,
-                        game.viewport.getCamera().position.y - game.viewport.getMinWorldHeight() / 2,
-                        game.viewport.getMinWorldWidth(),
-                        game.viewport.getMinWorldHeight()
+                        camera.position.x - viewportWidth * camera.zoom / 2,
+                        camera.position.y - viewportHeight * camera.zoom / 2,
+                        viewportWidth * camera.zoom,
+                        viewportHeight * camera.zoom
                     );
                     currentCameraArea = i;
                     break;
                 }
             }
         }
-        Camera camera = game.viewport.getCamera();
-        if (currentCameraArea == -1) {
-            camera.position.x = MathUtils.clamp(
-                player.getBody().getPosition().x,
-                game.viewport.getWorldWidth() / 2f,
-                map.getProperties().get("width", Integer.class) - game.viewport.getWorldWidth() / 2f
-            );
-            camera.position.y = MathUtils.clamp(
-                player.getBody().getPosition().y,
-                game.viewport.getWorldHeight() / 2f,
-                map.getProperties().get("height", Integer.class) - game.viewport.getWorldHeight() / 2f
-            );
-        } else {
+        float maxZoomOut = 1.2f;
+        float minX = viewportWidth / 2f;
+        float minY = viewportHeight / 2f;
+        float maxX = map.getProperties().get("width", Integer.class) - viewportWidth / 2f;
+        float maxY = map.getProperties().get("height", Integer.class) - viewportHeight / 2f;
+        camera.zoom = 1;
+        if (currentCameraArea != -1) {
             CameraArea cameraArea = cameraAreas.get(currentCameraArea);
-            camera.position.x = cameraArea.getX();
-            camera.position.y = cameraArea.getY();
-            cameraWidth = cameraArea.getWidth();
-            cameraHeight = cameraArea.getHeight();
+            camera.zoom = Math.min(maxZoomOut, cameraArea.getZoom(viewportWidth, viewportHeight));
+            minX = cameraArea.getPosition().x - cameraArea.getWidth() / 2 + viewportWidth / 2 * camera.zoom;
+            minY = cameraArea.getPosition().y - cameraArea.getHeight() / 2 + viewportHeight / 2 * camera.zoom;
+            maxX = cameraArea.getPosition().x + cameraArea.getWidth() / 2 - viewportWidth / 2 * camera.zoom;
+            maxY = cameraArea.getPosition().y + cameraArea.getHeight() / 2 - viewportHeight / 2 * camera.zoom;
+            if (maxX < minX) {
+                maxX = (maxX + minX) / 2;
+                minX = maxX;
+            }
+            if (maxY < minY) {
+                maxY = (maxY + minY) / 2;
+                minY = maxY;
+            }
         }
+        camera.position.set(
+            MathUtils.clamp(player.getBody().getPosition().x, minX, maxX),
+            MathUtils.clamp(player.getBody().getPosition().y, minY, maxY),
+            0
+        );
         if (cameraInterpolationTime > 0) {
             float progress = 1 - cameraInterpolationTime / interpolationDuration;
-            camera.position.x = progress * camera.position.x + (1 - progress) * cameraInterpolationArea.getX();
-            camera.position.y = progress * camera.position.y + (1 - progress) * cameraInterpolationArea.getY();
-            cameraWidth = progress * cameraWidth + (1 - progress) * cameraInterpolationArea.getWidth();
-            cameraHeight = progress * cameraHeight + (1 - progress) * cameraInterpolationArea.getHeight();
-        }
-        if (game.viewport.getMinWorldWidth() != cameraWidth || game.viewport.getMinWorldHeight() != cameraHeight) {
-            game.viewport.setMinWorldWidth(cameraWidth);
-            game.viewport.setMinWorldHeight(cameraHeight);
-            game.viewport.update(game.viewport.getScreenWidth(), game.viewport.getScreenHeight());
+            camera.position.set(new Vector3(camera.position).scl(progress).add(cameraInterpolationArea.getPosition().scl(1 - progress)));
+            camera.zoom = progress * camera.zoom + (1 - progress) * cameraInterpolationArea.getZoom(viewportWidth, viewportHeight);
         }
     }
 

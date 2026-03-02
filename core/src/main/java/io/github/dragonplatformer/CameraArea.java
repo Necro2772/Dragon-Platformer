@@ -1,6 +1,7 @@
 package io.github.dragonplatformer;
 
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 
 public class CameraArea {
     private final float x1;
@@ -8,6 +9,13 @@ public class CameraArea {
     private final float y1;
     private final float y2;
 
+    /**
+     * An area which contains the position and size of a viewable zone on the screen
+     * @param x horizontal screen position of the lower left corner of the area
+     * @param y vertical screen position of the lower left corner of the area
+     * @param width width of the area
+     * @param height height of the area
+     */
     public CameraArea(float x, float y, float width, float height) {
         x1 = x;
         x2 = x + width;
@@ -27,11 +35,11 @@ public class CameraArea {
         return y2 - y1;
     }
 
-    public float getX() {
-        return (x1 + x2) / 2;
+    public Vector3 getPosition() {
+        return new Vector3((x1 + x2) / 2, (y1 + y2) / 2, 0);
     }
 
-    public float getY() {
-        return (y1 + y2) / 2;
+    public float getZoom(float viewportWidth, float viewportHeight) {
+        return Math.max(getWidth() / viewportWidth, getHeight() / viewportHeight);
     }
 }

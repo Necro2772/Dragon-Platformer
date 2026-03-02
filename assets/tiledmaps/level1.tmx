@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="200" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="387">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="200" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="392">
  <tileset firstgid="1" name="cave-tiles" tilewidth="32" tileheight="32" spacing="2" margin="1" tilecount="256" columns="16">
   <image source="../../../tiledmaps/tilesets/cave-tiles-extruded.png" width="544" height="544"/>
   <wangsets>
@@ -138,6 +138,10 @@
   <object id="381" x="204" y="456" width="1488" height="948"/>
   <object id="382" x="1880" y="164" width="1372" height="1988"/>
   <object id="384" x="68" y="1536" width="1252" height="1404"/>
+  <object id="387" x="3440" y="168" width="2912" height="936"/>
+  <object id="388" x="3444" y="1144" width="2768" height="756"/>
+  <object id="389" x="3228" y="1932" width="976" height="1164"/>
+  <object id="390" x="5200" y="1884" width="1056" height="1164"/>
  </objectgroup>
  <objectgroup id="2" name="Collision">
   <object id="56" x="190.667" y="985.333" width="89.3333" height="61.3333"/>
