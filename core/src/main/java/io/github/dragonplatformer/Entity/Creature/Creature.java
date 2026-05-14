@@ -240,7 +240,7 @@ public abstract class Creature extends Entity {
             if (hitGroup != -1 && cooldown > 0) hitMap.put(hitGroup, cooldown);
         }
 
-        public void updateCooldowns(float delta) {
+        public void update(float delta) {
             if (getInvulnerable()) setInvulnerability(invulnerability - delta);
             for (int group : hitMap.keySet()) {
                 if (hitMap.get(group) - delta < 0) hitMap.remove(group);

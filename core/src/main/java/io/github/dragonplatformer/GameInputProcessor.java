@@ -2,7 +2,7 @@ package io.github.dragonplatformer;
 
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
-import io.github.dragonplatformer.Entity.Creature.Player;
+import io.github.dragonplatformer.Entity.Creature.Player.Player;
 
 public class GameInputProcessor implements InputProcessor {
     private final Player player;
@@ -36,7 +36,10 @@ public class GameInputProcessor implements InputProcessor {
                 player.input.setJump(true);
                 break;
             case Input.Keys.SHIFT_LEFT:
-                player.input.setGlide(true);
+                player.input.setGuard(true);
+                break;
+            case Input.Keys.CONTROL_LEFT:
+                player.input.setDodge(true);
                 break;
             case Input.Keys.E:
                 player.input.setProjectile(true);
@@ -68,7 +71,10 @@ public class GameInputProcessor implements InputProcessor {
                 player.input.setUpMove(false);
                 break;
             case Input.Keys.SHIFT_LEFT:
-                player.input.setGlide(false);
+                player.input.setGuard(false);
+                break;
+            case Input.Keys.CONTROL_LEFT:
+                player.input.setDodge(false);
                 break;
             case Input.Keys.E:
                 player.input.setProjectile(false);
@@ -92,7 +98,7 @@ public class GameInputProcessor implements InputProcessor {
                 player.input.setProjectile(true);
                 break;
             case Input.Buttons.LEFT:
-                player.meleeAttack();
+                player.input.setMelee(true);
                 break;
         }
         return false;
@@ -103,6 +109,9 @@ public class GameInputProcessor implements InputProcessor {
         switch (button) {
             case Input.Buttons.RIGHT:
                 player.input.setProjectile(false);
+                break;
+            case Input.Buttons.LEFT:
+                player.input.setMelee(false);
                 break;
         }
         return false;

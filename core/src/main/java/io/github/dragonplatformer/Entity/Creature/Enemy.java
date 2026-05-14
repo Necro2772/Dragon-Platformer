@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.AttackEffect.EnemyDeathVisual;
+import io.github.dragonplatformer.Entity.Creature.Player.Player;
 import io.github.dragonplatformer.Entity.Loot.Crystal;
 import io.github.dragonplatformer.GameContactListener;
 
@@ -104,10 +105,10 @@ public abstract class Enemy extends Creature {
         if (playerSighted && !playerInRange) {
             if (getBody().getPosition().dst(playerPos) > aggroRange) playerSighted = false;
         }
-        stats.updateCooldowns(delta);
+        stats.update(delta);
         if (playerSighted && getState().getFacePlayer()) {
-            if (getBody().getPosition().x < getPlayerPos().x) setDirection(1);
-            else setDirection(-1);
+            if (getBody().getPosition().x < getPlayerPos().x) setSpriteDirection(1);
+            else setSpriteDirection(-1);
         }
     }
 
@@ -182,7 +183,7 @@ public abstract class Enemy extends Creature {
         batch.draw(frame,
             this.getBody().getPosition().x - getWidth() / 2f,
             this.getBody().getPosition().y - getHeight() / 2f,
-            getCenter().x, getCenter().y, getWidth(), getHeight(), getDirection(), 1, 0);
+            getCenter().x, getCenter().y, getWidth(), getHeight(), getSpriteDirection(), 1, 0);
     }
 
     @Override
@@ -365,8 +366,8 @@ public abstract class Enemy extends Creature {
             this.projectileSpd = projectileSpd;
         }
 
-        public void updateCooldowns(float delta) {
-            super.updateCooldowns(delta);
+        public void update(float delta) {
+            super.update(delta);
             if (getHitTimer() > 0) setHitTimer(getHitTimer() - delta);
             if (attackCD > 0) attackCD -= delta;
         }

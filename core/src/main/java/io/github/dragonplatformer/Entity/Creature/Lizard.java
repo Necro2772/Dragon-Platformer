@@ -48,7 +48,7 @@ public class Lizard extends Enemy {
                 Vector2 dir = new Vector2(getPlayerPos().x - posx, getPlayerPos().y - posy).nor();
                 dir.scl(stats().getProjectileSpd());
                 Projectile fireball = new Fireball(1, 5, 1, getBody().getPosition().x, getBody().getPosition().y,
-                    1, 1, getDirection(), animManager, false, getBody().getWorld());
+                    1, 1, getSpriteDirection(), animManager, false, getBody().getWorld());
                 fireball.getBody().applyLinearImpulse(dir.x, dir.y, 0, 0, true);
                 fireball.setRotation(dir.angleDeg());
 

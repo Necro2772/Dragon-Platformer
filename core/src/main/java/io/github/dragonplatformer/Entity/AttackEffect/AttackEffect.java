@@ -25,7 +25,7 @@ public abstract class AttackEffect extends Entity {
         super(x, y, width, height, world);
         this.knockback = knockback;
         this.damage = damage;
-        setDirection(direction);
+        setSpriteDirection(direction);
         this.anims = anims;
         init();
     }
@@ -35,7 +35,7 @@ public abstract class AttackEffect extends Entity {
         super(width, height, body);
         this.knockback = knockback;
         this.damage = damage;
-        setDirection(direction);
+        setSpriteDirection(direction);
         this.anims = anims;
         init();
     }
@@ -91,7 +91,7 @@ public abstract class AttackEffect extends Entity {
         batch.draw(frame,
             getBody().getPosition().x + positionOffset.x - getWidth() / 2f,
             getBody().getPosition().y + positionOffset.y - getHeight() / 2f,
-            getWidth() / 2f, getHeight() / 2f, getWidth(), getHeight(), getDirection(), 1, getRotation());
+            getWidth() / 2f, getHeight() / 2f, getWidth(), getHeight(), getSpriteDirection(), 1, getRotation());
     }
 
     public void setPositionOffset(Vector2 posOffset) {

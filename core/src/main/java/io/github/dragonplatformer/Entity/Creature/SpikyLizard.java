@@ -34,12 +34,12 @@ public class SpikyLizard extends Enemy {
                     break;
                 case ATTACKING:
                     Vector2 vel = getBody().getLinearVelocity();
-                    if (vel.x * getDirection() > 0.1f) {
+                    if (vel.x * getSpriteDirection() > 0.1f) {
                         getBody().applyLinearImpulse(-vel.x, 0, getBody().getPosition().x, getBody().getPosition().y, true);
                     }
                     if (anims.get(getState()).getKeyFrameIndex(getStateTime()) == 0
                         && anims.get(getState()).getKeyFrameIndex(getStateTime() + delta) == 1) {
-                        new Slash(1, 5, 5, 2, new Vector2(5 * getDirection(), -2), getDirection(), animManager, getBody());
+                        new Slash(1, 5, 5, 2, new Vector2(5 * getSpriteDirection(), -2), getSpriteDirection(), animManager, getBody());
                     }
                     break;
             }
@@ -59,8 +59,8 @@ public class SpikyLizard extends Enemy {
         float accel = 2f;
         Vector2 vel = getBody().getLinearVelocity();
         Vector2 pos = getBody().getPosition();
-        if (vel.x * getDirection() < maxSpeed) {
-            getBody().applyLinearImpulse(accel * getDirection(), 0, pos.x, pos.y, true);
+        if (vel.x * getSpriteDirection() < maxSpeed) {
+            getBody().applyLinearImpulse(accel * getSpriteDirection(), 0, pos.x, pos.y, true);
         }
     }
 

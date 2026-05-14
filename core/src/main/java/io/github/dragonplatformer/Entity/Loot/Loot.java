@@ -74,7 +74,7 @@ public abstract class Loot extends Entity {
         batch.draw(frame,
             this.getBody().getPosition().x - getWidth() / 2f,
             this.getBody().getPosition().y - getHeight() / 2f,
-            getWidth() / 2f, getHeight() / 2f, getWidth(), getHeight(), getDirection(), 1, 0);
+            getWidth() / 2f, getHeight() / 2f, getWidth(), getHeight(), getSpriteDirection(), 1, 0);
     }
 
     @Override

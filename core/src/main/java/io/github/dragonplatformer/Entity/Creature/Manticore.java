@@ -163,8 +163,8 @@ public class Manticore extends Enemy {
             float rot = spread * (i) / (numProjectiles - 1) - spread / 2;
             Vector2 aim = new Vector2(getPlayerPos()).sub(projectile.getBody().getPosition()).rotateDeg(rot);
             projectile.setRotation(aim.angleDeg());
-            if (Math.abs(aim.angleDeg() - 180) > 90) projectile.setDirection(1);
-            else projectile.setDirection(-1);
+            if (Math.abs(aim.angleDeg() - 180) > 90) projectile.setSpriteDirection(1);
+            else projectile.setSpriteDirection(-1);
             projectile.getBody().applyLinearImpulse(aim.setLength(30), projectile.getBody().getPosition(), true);
         }
     }

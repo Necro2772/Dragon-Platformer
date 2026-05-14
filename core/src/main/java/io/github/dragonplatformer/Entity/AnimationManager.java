@@ -5,14 +5,14 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import io.github.dragonplatformer.Entity.AttackEffect.AttackEffect;
 import io.github.dragonplatformer.Entity.Creature.Enemy;
-import io.github.dragonplatformer.Entity.Creature.Player;
+import io.github.dragonplatformer.Entity.Creature.Player.PlayerState;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class AnimationManager {
     private final TextureAtlas atlas;
-    private final Map<AnimationKeys, Map<Player.PlayerState, Animation<TextureRegion>>> playerAnimations;
+    private final Map<AnimationKeys, Map<PlayerState, Animation<TextureRegion>>> playerAnimations;
     private final Map<AnimationKeys, Map<Enemy.EnemyState, Animation<TextureRegion>>> enemyAnimations;
     private final Map<AnimationKeys, Map<AttackEffect.AttackState, Animation<TextureRegion>>> effectAnimations;
     private final Map<AnimationKeys, Animation<TextureRegion>> lootAnimations;
@@ -25,85 +25,89 @@ public class AnimationManager {
         lootAnimations = new HashMap<>();
     }
 
-    public Map<Player.PlayerState, Animation<TextureRegion>> getPlayerAnimations() {
+    public Map<PlayerState, Animation<TextureRegion>> getPlayerAnimations() {
         AnimationKeys key = AnimationKeys.PLAYER;
         if (!playerAnimations.containsKey(key)) {
             playerAnimations.put(key, Map.ofEntries(
-                Map.entry(Player.PlayerState.IDLE, new Animation<>(
+                Map.entry(PlayerState.IDLE, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_idle"),
                     Animation.PlayMode.LOOP
-                )), Map.entry(Player.PlayerState.RUNNING, new Animation<>(
+                )), Map.entry(PlayerState.RUNNING, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_run"),
                     Animation.PlayMode.LOOP_PINGPONG
-                )), Map.entry(Player.PlayerState.JUMPING, new Animation<>(
+                )), Map.entry(PlayerState.JUMPING, new Animation<>(
                     1/9f,
                     atlas.findRegions("dragon_flap"),
                     Animation.PlayMode.LOOP
-                )), Map.entry(Player.PlayerState.FLYING, new Animation<>(
+                )), Map.entry(PlayerState.FLAPPING, new Animation<>(
+                    1/9f,
+                    atlas.findRegions("dragon_flap"),
+                    Animation.PlayMode.LOOP
+                )), Map.entry(PlayerState.FLYING, new Animation<>(
                     1/6f,
                     atlas.findRegions("dragon_fly"),
                     Animation.PlayMode.LOOP
-                )), Map.entry(Player.PlayerState.GLIDING, new Animation<>(
+                )), Map.entry(PlayerState.GLIDING, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_glide"),
                     Animation.PlayMode.LOOP
-                )), Map.entry(Player.PlayerState.DIVING, new Animation<>(
+                )), Map.entry(PlayerState.DIVING, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_dive"),
                     Animation.PlayMode.LOOP
-                )), Map.entry(Player.PlayerState.DIVESOAR, new Animation<>(
+                )), Map.entry(PlayerState.SOAR, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_divesoar"),
                     Animation.PlayMode.LOOP
-                )), Map.entry(Player.PlayerState.DASH, new Animation<>(
-                    1/6f,
+                )), Map.entry(PlayerState.DASH, new Animation<>(
+                    1/4f,
                     atlas.findRegions("dragon_dash"),
                     Animation.PlayMode.LOOP
-                )), Map.entry(Player.PlayerState.DASHDIVE, new Animation<>(
+                )), Map.entry(PlayerState.DASHDIVE, new Animation<>(
                     1/4f,
                     atlas.findRegions("dragon_dive"),
                     Animation.PlayMode.LOOP
-                )), Map.entry(Player.PlayerState.ATTACKFORWARD, new Animation<>(
+                )), Map.entry(PlayerState.ATTACKFORWARD, new Animation<>(
                     1/4f,
                     atlas.findRegions("dragon_attackforward"),
                     Animation.PlayMode.NORMAL
-                )), Map.entry(Player.PlayerState.ATTACKFORWARD2, new Animation<>(
+                )), Map.entry(PlayerState.ATTACKFORWARD2, new Animation<>(
                     1/4f,
                     atlas.findRegions("dragon_attackforward2"),
                     Animation.PlayMode.NORMAL
-                )), Map.entry(Player.PlayerState.ATTACKFORWARD3, new Animation<>(
+                )), Map.entry(PlayerState.ATTACKFORWARD3, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_attackforward3"),
                     Animation.PlayMode.NORMAL
-                )), Map.entry(Player.PlayerState.ATTACKDIVE, new Animation<>(
+                )), Map.entry(PlayerState.ATTACKDIVE, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_attackforward3"),
                     Animation.PlayMode.NORMAL
-                )), Map.entry(Player.PlayerState.ATTACKDASH, new Animation<>(
+                )), Map.entry(PlayerState.ATTACKDASH, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_attackforward3"),
                     Animation.PlayMode.NORMAL
-                )), Map.entry(Player.PlayerState.ATTACKGLIDE, new Animation<>(
+                )), Map.entry(PlayerState.ATTACKGLIDE, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_attackforward3"),
                     Animation.PlayMode.NORMAL
-                )), Map.entry(Player.PlayerState.ATTACKJUMP, new Animation<>(
+                )), Map.entry(PlayerState.ATTACKJUMP, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_attackforward3"),
                     Animation.PlayMode.NORMAL
-                )), Map.entry(Player.PlayerState.ATTACKDOWN, new Animation<>(
+                )), Map.entry(PlayerState.ATTACKDOWN, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_attackdown"),
                     Animation.PlayMode.NORMAL
-                )), Map.entry(Player.PlayerState.ATTACKUP, new Animation<>(
+                )), Map.entry(PlayerState.ATTACKUP, new Animation<>(
                     1/3f,
                     atlas.findRegions("dragon_attackup"),
                     Animation.PlayMode.NORMAL
-                )), Map.entry(Player.PlayerState.DEATH, new Animation<>(
+                )), Map.entry(PlayerState.DEATH, new Animation<>(
                     1/2f,
-                    atlas.findRegions("dragon_jump"),
+                    atlas.findRegions("dragon_flap"),
                     Animation.PlayMode.NORMAL
                 ))
             ));

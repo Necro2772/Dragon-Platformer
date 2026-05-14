@@ -2,7 +2,6 @@ package io.github.dragonplatformer;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -26,6 +25,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import io.github.dragonplatformer.Entity.*;
 import io.github.dragonplatformer.Entity.AttackEffect.AttackEffect;
 import io.github.dragonplatformer.Entity.Creature.*;
+import io.github.dragonplatformer.Entity.Creature.Player.Player;
 
 import java.util.ArrayList;
 
@@ -46,8 +46,8 @@ public class GameScreen implements Screen {
     private final Array<Creature> invulBodies;
     private final AnimationManager animManager;
     private final ShaderProgram hitShader;
-    private float shaderTimer;
-    private boolean debug;
+//    private float shaderTimer;
+//    private boolean debug;
     private final ArrayList<CameraArea> cameraAreas;
     private int currentCameraArea;
     private CameraArea cameraInterpolationArea;
@@ -62,8 +62,8 @@ public class GameScreen implements Screen {
         invulBodies = new Array<>();
         effects = new Array<>();
         world = new World(new Vector2(0, -9.8f), true);
-        debug = false;
-        shaderTimer = 0;
+//        debug = false;
+//        shaderTimer = 0;
         cameraAreas = new ArrayList<>();
         cameraInterpolationArea = null;
         cameraInterpolationTime = 0;
@@ -231,7 +231,7 @@ public class GameScreen implements Screen {
         }
         if (cameraInterpolationTime > 0) cameraInterpolationTime -= delta;
         updateCamera();
-        draw();
+        draw(delta);
         debugRenderer.render(world, game.viewport.getCamera().combined);
         world.step(1/60f, 6, 2);
     }
@@ -310,7 +310,7 @@ public class GameScreen implements Screen {
         }
     }
 
-    private void draw() {
+    private void draw(float delta) {
         tiledMapRenderer.setView((OrthographicCamera) game.viewport.getCamera());
         ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
         game.viewport.apply();
@@ -336,36 +336,36 @@ public class GameScreen implements Screen {
                     Creature c = (Creature) e;
                     if (c.getHitFlash()) hitBodies.add(c);
                     else if (c.stats().getInvulnerable()) invulBodies.add(c);
-                    else c.draw(game.batch, Gdx.graphics.getDeltaTime());
+                    else c.draw(game.batch, delta);
                 }
-                else e.draw(game.batch, Gdx.graphics.getDeltaTime());
+                else e.draw(game.batch, delta);
             }
         }
         game.batch.setShader(hitShader);
         for (Creature creature : hitBodies) {
-            if (creature.getHitEffectTimer() > 0.1f) creature.draw(game.batch, Gdx.graphics.getDeltaTime());
+            if (creature.getHitEffectTimer() > 0.1f) creature.draw(game.batch, delta);
         }
         game.batch.setShader(null);
         game.batch.setColor(Color.BLACK);
         for (Creature creature : hitBodies) {
-            if (creature.getHitEffectTimer() <= 0.1f) creature.draw(game.batch, Gdx.graphics.getDeltaTime());
+            if (creature.getHitEffectTimer() <= 0.1f) creature.draw(game.batch, delta);
         }
 
-        shaderTimer += Gdx.graphics.getDeltaTime();
-        shaderTimer %= 0.7f;
+//        shaderTimer += delta;
+//        shaderTimer %= 0.7f;
         //if (shaderTimer < 0.1f) game.batch.setColor(new Color(0.3f, 0.3f, 0.3f, 0));
         //else
             game.batch.setColor(new Color(0.6f, 0.6f, 0.6f, 1f));
         for (Creature creature : invulBodies) {
-            creature.draw(game.batch, Gdx.graphics.getDeltaTime());
+            creature.draw(game.batch, delta);
         }
         game.batch.setColor(Color.WHITE);
         for (AttackEffect effect : effects) {
-            effect.draw(game.batch, Gdx.graphics.getDeltaTime());
+            effect.draw(game.batch, delta);
         }
         game.batch.end();
 
-        uiStage.act(Gdx.graphics.getDeltaTime());
+        uiStage.act(delta);
         debugInfo.setText(String.format(
             "%n%nPlayer State: %s%n" +
                 "State Time: %.2f%n" +
@@ -373,9 +373,14 @@ public class GameScreen implements Screen {
                 "Health: %.1f%n" +
                 "Crystals: %d%n" +
                 "Glide Charge: %.2f%n" +
-                "Soar Charge: %.2f",
-            player.getState(), player.getStateTime(), player.getInput().numJumps,
-            player.stats().getHealth(), player.stats().getCrystals(), player.getInput().glideCharge, player.getInput().soarCharge
+                "Soar Charge: %.2f%n" +
+                "Glide: %s%n" +
+                "VelX: %.2f%n" +
+                "VelY: %.2f",
+            player.getState(), player.getStateTime(), player.input().numJumps,
+            player.stats().getHealth(), player.stats().getCrystals(), player.stats().glideCharge,
+            player.stats().soarCharge, player.input().glide, player.getBody().getLinearVelocity().x,
+            player.getBody().getLinearVelocity().y
             ));
         debugInfo.pack();
         debugInfo.setPosition(10, Gdx.graphics.getHeight() - debugInfo.getPrefHeight());
@@ -411,7 +416,7 @@ public class GameScreen implements Screen {
     }
 
     public void setDebug(boolean debug) {
-        this.debug = debug;
+//        this.debug = debug;
         if (debug) debugRenderer.setDrawBodies(!debugRenderer.isDrawBodies());
     }
 
