@@ -1,0 +1,16 @@
+package io.github.dragonplatformer.Entity;
+
+public enum AnimationKey {
+    PLAYER,
+    ENEMY_LIZARD,
+    ENEMY_BAT,
+    ENEMY_SPIKYLIZARD,
+    ENEMY_MANTICORE,
+    EFFECT_FIREBALL,
+    EFFECT_EXPLOSION,
+    EFFECT_CLAWSWIPE,
+    EFFECT_SLASH,
+    EFFECT_PROJECTILESHOOT,
+    EFFECT_ENEMYDEATH,
+    EFFECT_LOOT_CRYSTAL
+}

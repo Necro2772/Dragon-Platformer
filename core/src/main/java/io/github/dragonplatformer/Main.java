@@ -6,8 +6,6 @@ import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.maps.tiled.TiledMap;
-import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
@@ -27,7 +25,7 @@ public class Main extends Game {
         font.getData().setScale(27f / Gdx.graphics.getHeight() * 15);
         manager = new AssetManager();
 
-        menu = new MainMenu(this, "tiledmaps/hub.tmx");
+        menu = new MainMenu(this, "tiledmaps/combat-test.tmx");
         this.setScreen(menu);
     }
 

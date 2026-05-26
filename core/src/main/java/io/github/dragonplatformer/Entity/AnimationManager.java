@@ -3,30 +3,33 @@ package io.github.dragonplatformer.Entity;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import io.github.dragonplatformer.Entity.AttackEffect.AttackEffect;
-import io.github.dragonplatformer.Entity.Creature.Enemy;
-import io.github.dragonplatformer.Entity.Creature.Player.PlayerState;
+import io.github.dragonplatformer.Entity.Actor.Enemy.EnemyState;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerState;
+import io.github.dragonplatformer.Entity.Effect.EffectState;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class AnimationManager {
     private final TextureAtlas atlas;
-    private final Map<AnimationKeys, Map<PlayerState, Animation<TextureRegion>>> playerAnimations;
-    private final Map<AnimationKeys, Map<Enemy.EnemyState, Animation<TextureRegion>>> enemyAnimations;
-    private final Map<AnimationKeys, Map<AttackEffect.AttackState, Animation<TextureRegion>>> effectAnimations;
-    private final Map<AnimationKeys, Animation<TextureRegion>> lootAnimations;
+    private final Map<AnimationKey, Map<PlayerState, Animation<TextureRegion>>> playerAnimations;
+    private final Map<PlayerState, List<AnimationEvent>> playerAnimationEvents;
+    private final Map<AnimationKey, Map<EnemyState, Animation<TextureRegion>>> enemyAnimations;
+    private final Map<AnimationKey, Map<EnemyState, List<AnimationEvent>>> enemyAnimationEvents;
+    private final Map<AnimationKey, Map<EffectState, Animation<TextureRegion>>> effectAnimations;
+    private final Map<AnimationKey, Map<EffectState, List<AnimationEvent>>> effectAnimationEvents;
 
     public AnimationManager(TextureAtlas atlas) {
         this.atlas = atlas;
         playerAnimations = new HashMap<>();
+        playerAnimationEvents = new HashMap<>();
         enemyAnimations = new HashMap<>();
+        enemyAnimationEvents = new HashMap<>();
         effectAnimations = new HashMap<>();
-        lootAnimations = new HashMap<>();
+        effectAnimationEvents = new HashMap<>();
     }
 
     public Map<PlayerState, Animation<TextureRegion>> getPlayerAnimations() {
-        AnimationKeys key = AnimationKeys.PLAYER;
+        AnimationKey key = AnimationKey.PLAYER;
         if (!playerAnimations.containsKey(key)) {
             playerAnimations.put(key, Map.ofEntries(
                 Map.entry(PlayerState.IDLE, new Animation<>(
@@ -61,49 +64,73 @@ public class AnimationManager {
                     1/3f,
                     atlas.findRegions("dragon_divesoar"),
                     Animation.PlayMode.LOOP
-                )), Map.entry(PlayerState.DASH, new Animation<>(
+                )), Map.entry(PlayerState.EVADE, new Animation<>(
                     1/4f,
                     atlas.findRegions("dragon_dash"),
                     Animation.PlayMode.LOOP
-                )), Map.entry(PlayerState.DASHDIVE, new Animation<>(
+                )), Map.entry(PlayerState.EVADE_UP, new Animation<>(
+                    1/4f,
+                    atlas.findRegions("dragon_dash"),
+                    Animation.PlayMode.LOOP
+                )), Map.entry(PlayerState.EVADE_DOWN, new Animation<>(
+                    1/4f,
+                    atlas.findRegions("dragon_dash"),
+                    Animation.PlayMode.LOOP
+                )), Map.entry(PlayerState.EVADE_DASH, new Animation<>(
+                    1/4f,
+                    atlas.findRegions("dragon_dash"),
+                    Animation.PlayMode.LOOP
+                )), Map.entry(PlayerState.EVADE_DASH_UP, new Animation<>(
+                    1/4f,
+                    atlas.findRegions("dragon_dash"),
+                    Animation.PlayMode.LOOP
+                )), Map.entry(PlayerState.EVADE_DASH_DOWN, new Animation<>(
                     1/4f,
                     atlas.findRegions("dragon_dive"),
                     Animation.PlayMode.LOOP
-                )), Map.entry(PlayerState.ATTACKFORWARD, new Animation<>(
-                    1/4f,
+                )), Map.entry(PlayerState.ATTACK_FORWARD1, new Animation<>(
+                    0.25f,
                     atlas.findRegions("dragon_attackforward"),
                     Animation.PlayMode.NORMAL
-                )), Map.entry(PlayerState.ATTACKFORWARD2, new Animation<>(
-                    1/4f,
+                )), Map.entry(PlayerState.ATTACK_FORWARD2, new Animation<>(
+                    0.25f,
                     atlas.findRegions("dragon_attackforward2"),
                     Animation.PlayMode.NORMAL
-                )), Map.entry(PlayerState.ATTACKFORWARD3, new Animation<>(
-                    1/3f,
-                    atlas.findRegions("dragon_attackforward3"),
+                )), Map.entry(PlayerState.ATTACK_UP, new Animation<>(
+                    0.33f,
+                    atlas.findRegions("dragon_attackup"),
                     Animation.PlayMode.NORMAL
-                )), Map.entry(PlayerState.ATTACKDIVE, new Animation<>(
-                    1/3f,
-                    atlas.findRegions("dragon_attackforward3"),
-                    Animation.PlayMode.NORMAL
-                )), Map.entry(PlayerState.ATTACKDASH, new Animation<>(
-                    1/3f,
-                    atlas.findRegions("dragon_attackforward3"),
-                    Animation.PlayMode.NORMAL
-                )), Map.entry(PlayerState.ATTACKGLIDE, new Animation<>(
-                    1/3f,
-                    atlas.findRegions("dragon_attackforward3"),
-                    Animation.PlayMode.NORMAL
-                )), Map.entry(PlayerState.ATTACKJUMP, new Animation<>(
-                    1/3f,
-                    atlas.findRegions("dragon_attackforward3"),
-                    Animation.PlayMode.NORMAL
-                )), Map.entry(PlayerState.ATTACKDOWN, new Animation<>(
-                    1/3f,
+                )), Map.entry(PlayerState.ATTACK_DOWN, new Animation<>(
+                    0.33f,
                     atlas.findRegions("dragon_attackdown"),
                     Animation.PlayMode.NORMAL
-                )), Map.entry(PlayerState.ATTACKUP, new Animation<>(
-                    1/3f,
-                    atlas.findRegions("dragon_attackup"),
+                )), Map.entry(PlayerState.ATTACK_GLIDE, new Animation<>(
+                    1.0f,
+                    atlas.findRegions("dragon_attackforward3"),
+                    Animation.PlayMode.NORMAL
+                )), Map.entry(PlayerState.ATTACK_GLIDE_HIT, new Animation<>(
+                    0.5f,
+                    atlas.findRegions("dragon_attackforward3"),
+                    Animation.PlayMode.NORMAL
+                )), Map.entry(PlayerState.ATTACK_SOAR, new Animation<>(
+                    0.73f,
+                    atlas.findRegions("dragon_attackforward3"),
+                    Animation.PlayMode.NORMAL
+                )), Map.entry(PlayerState.ATTACK_DIVE, new Animation<>(
+                    0.73f,
+                    atlas.findRegions("dragon_attackforward3"),
+                    Animation.PlayMode.NORMAL
+                )), Map.entry(PlayerState.ATTACK_DIVE_LAND, new Animation<>(
+                    0.73f,
+                    atlas.findRegions("dragon_attackforward3"),
+                    Animation.PlayMode.NORMAL
+                )), Map.entry(PlayerState.ATTACK_GROUND1, new Animation<>(
+                    0.25f,
+                    atlas.findRegions("dragon_attackforward"),
+                    Animation.PlayMode.NORMAL
+                )), Map.entry(PlayerState.ATTACK_GROUND2, new Animation<>(
+                    0.25f,
+                    atlas.findRegions("dragon_attackforward2"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(PlayerState.DEATH, new Animation<>(
                     1/2f,
@@ -115,17 +142,44 @@ public class AnimationManager {
         return playerAnimations.get(key);
     }
 
-    public Map<Enemy.EnemyState, Animation<TextureRegion>> getEnemyAnims(AnimationKeys key) {
+    public Map<PlayerState, List<AnimationEvent>> getPlayerAnimEvents() {
+        if (playerAnimationEvents.isEmpty()) {
+            playerAnimationEvents.putAll(Map.ofEntries(
+                Map.entry(PlayerState.EVADE, Arrays.asList(
+                    new AnimationEvent(0 / 60f, "evadestart"),
+                    new AnimationEvent(15 / 60f, "evadeend")
+                )), Map.entry(PlayerState.EVADE_DOWN, Arrays.asList(
+                    new AnimationEvent(0 / 60f, "evadestart"),
+                    new AnimationEvent(15 / 60f, "evadeend")
+                )), Map.entry(PlayerState.EVADE_UP, Arrays.asList(
+                    new AnimationEvent(0 / 60f, "evadestart"),
+                    new AnimationEvent(15 / 60f, "evadeend")
+                )), Map.entry(PlayerState.EVADE_DASH, Arrays.asList(
+                    new AnimationEvent(0 / 60f, "invstart"),
+                    new AnimationEvent(15 / 60f, "invend")
+                )), Map.entry(PlayerState.EVADE_DASH_UP, Arrays.asList(
+                    new AnimationEvent(0 / 60f, "invstart"),
+                    new AnimationEvent(15 / 60f, "invend")
+                )), Map.entry(PlayerState.EVADE_DASH_DOWN, Arrays.asList(
+                    new AnimationEvent(0 / 60f, "invstart"),
+                    new AnimationEvent(15 / 60f, "invend")
+                ))
+            ));
+        }
+        return playerAnimationEvents;
+    }
+
+    public Map<EnemyState, Animation<TextureRegion>> getEnemyAnims(AnimationKey key) {
         if (!enemyAnimations.containsKey(key)) {
             switch (key) {
                 case ENEMY_LIZARD:
                     enemyAnimations.put(key, Map.ofEntries(
-                        Map.entry(Enemy.EnemyState.IDLE, new Animation<>(
+                        Map.entry(EnemyState.IDLE, new Animation<>(
                             1 / 3f,
                             atlas.findRegions("lizard_idle"),
                             Animation.PlayMode.LOOP
                         )),
-                        Map.entry(Enemy.EnemyState.ATTACKING, new Animation<>(
+                        Map.entry(EnemyState.ATTACKING, new Animation<>(
                             1 / 6f,
                             atlas.findRegions("lizard_attack"),
                             Animation.PlayMode.NORMAL
@@ -134,11 +188,11 @@ public class AnimationManager {
                     break;
                 case ENEMY_BAT:
                     enemyAnimations.put(key, Map.ofEntries(
-                        Map.entry(Enemy.EnemyState.IDLE, new Animation<>(
+                        Map.entry(EnemyState.IDLE, new Animation<>(
                             1 / 4f,
                             atlas.findRegions("bat_idle"),
                             Animation.PlayMode.LOOP
-                        )), Map.entry(Enemy.EnemyState.ATTACKING, new Animation<>(
+                        )), Map.entry(EnemyState.ATTACKING, new Animation<>(
                             1 / 6f,
                             atlas.findRegions("bat_idle"),
                             Animation.PlayMode.LOOP
@@ -147,12 +201,12 @@ public class AnimationManager {
                     break;
                 case ENEMY_SPIKYLIZARD:
                     enemyAnimations.put(key, Map.ofEntries(
-                        Map.entry(Enemy.EnemyState.IDLE, new Animation<>(
+                        Map.entry(EnemyState.IDLE, new Animation<>(
                             1 / 2f,
                             atlas.findRegions("spikylizard_idle"),
                             Animation.PlayMode.LOOP
                         )),
-                        Map.entry(Enemy.EnemyState.ATTACKING, new Animation<>(
+                        Map.entry(EnemyState.ATTACKING, new Animation<>(
                             0.7f,
                             atlas.findRegions("spikylizard_attack"),
                             Animation.PlayMode.NORMAL
@@ -161,47 +215,47 @@ public class AnimationManager {
                     break;
                 case ENEMY_MANTICORE:
                     enemyAnimations.put(key, Map.ofEntries(
-                        Map.entry(Enemy.EnemyState.IDLE, new Animation<>(
+                        Map.entry(EnemyState.IDLE, new Animation<>(
                             1/3f,
                             atlas.findRegions("manticore_idle"),
                             Animation.PlayMode.LOOP
                         )),
-                        Map.entry(Enemy.EnemyState.FLYIDLE, new Animation<>(
+                        Map.entry(EnemyState.FLYIDLE, new Animation<>(
                             1/3f,
                             atlas.findRegions("manticore_fly"),
                             Animation.PlayMode.LOOP
                         )),
-                        Map.entry(Enemy.EnemyState.CHARGELUNGE, new Animation<>(
+                        Map.entry(EnemyState.CHARGELUNGE, new Animation<>(
                             1/2f,
                             atlas.findRegions("manticore_chargepounce"),
                             Animation.PlayMode.NORMAL
                         )),
-                        Map.entry(Enemy.EnemyState.FLYCHARGELUNGE, new Animation<>(
+                        Map.entry(EnemyState.FLYCHARGELUNGE, new Animation<>(
                             1/2f,
                             atlas.findRegions("manticore_flychargepounce"),
                             Animation.PlayMode.NORMAL
                         )),
-                        Map.entry(Enemy.EnemyState.LUNGE, new Animation<>(
+                        Map.entry(EnemyState.LUNGE, new Animation<>(
                             1f,
                             atlas.findRegions("manticore_pounce"),
                             Animation.PlayMode.NORMAL
                         )),
-                        Map.entry(Enemy.EnemyState.CHARGESHOOTPROJECTILE, new Animation<>(
+                        Map.entry(EnemyState.CHARGESHOOTPROJECTILE, new Animation<>(
                             2f,
                             atlas.findRegions("manticore_tailswipe"),
                             Animation.PlayMode.NORMAL
                         )),
-                        Map.entry(Enemy.EnemyState.SHOOTPROJECTILE, new Animation<>(
+                        Map.entry(EnemyState.SHOOTPROJECTILE, new Animation<>(
                             0.5f,
                             atlas.findRegions("manticore_tailswipe"),
                             Animation.PlayMode.NORMAL
                         )),
-                        Map.entry(Enemy.EnemyState.FLYCHARGESHOOTPROJECTILE, new Animation<>(
+                        Map.entry(EnemyState.FLYCHARGESHOOTPROJECTILE, new Animation<>(
                             2f,
                             atlas.findRegions("manticore_flytailswipe"),
                             Animation.PlayMode.NORMAL
                         )),
-                        Map.entry(Enemy.EnemyState.FLYSHOOTPROJECTILE, new Animation<>(
+                        Map.entry(EnemyState.FLYSHOOTPROJECTILE, new Animation<>(
                             0.5f,
                             atlas.findRegions("manticore_flytailswipe"),
                             Animation.PlayMode.NORMAL
@@ -213,16 +267,31 @@ public class AnimationManager {
         return enemyAnimations.get(key);
     }
 
-    public Map<AttackEffect.AttackState, Animation<TextureRegion>> getEffectAnims(AnimationKeys key) {
+    public Map<EnemyState, List<AnimationEvent>> getEnemyAnimEvents(AnimationKey key) {
+        if (!enemyAnimationEvents.containsKey(key)) {
+            switch (key) {
+                default:
+                    enemyAnimationEvents.put(key, Map.ofEntries(
+                        Map.entry(EnemyState.IDLE, Arrays.asList(
+                            new AnimationEvent(0 / 60f, "test")
+                        ))
+                    ));
+                        break;
+            }
+        }
+        return enemyAnimationEvents.get(key);
+    }
+
+    public Map<EffectState, Animation<TextureRegion>> getEffectAnims(AnimationKey key) {
         if (!effectAnimations.containsKey(key)) {
             switch (key) {
                 case EFFECT_FIREBALL:
                     effectAnimations.put(key, Map.ofEntries(
-                        Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
+                        Map.entry(EffectState.IDLE, new Animation<>(
                         1/12f,
                         atlas.findRegions("fireball"),
                         Animation.PlayMode.LOOP)),
-                        Map.entry(AttackEffect.AttackState.DESTROYED, new Animation<>(
+                        Map.entry(EffectState.DESTROYED, new Animation<>(
                             1/12f,
                             atlas.findRegions("fireball_destroy"),
                             Animation.PlayMode.NORMAL))
@@ -230,11 +299,11 @@ public class AnimationManager {
                     break;
                 case EFFECT_EXPLOSION:
                     effectAnimations.put(key, Map.ofEntries(
-                        Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
+                        Map.entry(EffectState.IDLE, new Animation<>(
                             1/12f,
                             atlas.findRegions("fireball_destroy"),
                             Animation.PlayMode.NORMAL)),
-                        Map.entry(AttackEffect.AttackState.DESTROYED, new Animation<>(
+                        Map.entry(EffectState.DESTROYED, new Animation<>(
                             1/12f,
                             atlas.findRegions("fireball_destroy"),
                             Animation.PlayMode.NORMAL))
@@ -242,7 +311,7 @@ public class AnimationManager {
                     break;
                 case EFFECT_PROJECTILESHOOT:
                     effectAnimations.put(key, Map.ofEntries(
-                        Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
+                        Map.entry(EffectState.IDLE, new Animation<>(
                             1/12f,
                             atlas.findRegions("shooteffect"),
                             Animation.PlayMode.NORMAL
@@ -251,7 +320,7 @@ public class AnimationManager {
                     break;
                 case EFFECT_CLAWSWIPE:
                     effectAnimations.put(key, Map.ofEntries(
-                        Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
+                        Map.entry(EffectState.IDLE, new Animation<>(
                         1/12f,
                         atlas.findRegions("clawswipe"),
                         Animation.PlayMode.NORMAL))
@@ -259,7 +328,7 @@ public class AnimationManager {
                     break;
                 case EFFECT_SLASH:
                     effectAnimations.put(key, Map.ofEntries(
-                        Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
+                        Map.entry(EffectState.IDLE, new Animation<>(
                             1/12f,
                             atlas.findRegions("sweep"),
                             Animation.PlayMode.NORMAL))
@@ -267,10 +336,18 @@ public class AnimationManager {
                     break;
                 case EFFECT_ENEMYDEATH:
                     effectAnimations.put(key, Map.ofEntries(
-                        Map.entry(AttackEffect.AttackState.IDLE, new Animation<>(
+                        Map.entry(EffectState.IDLE, new Animation<>(
                             1/12f,
                             atlas.findRegions("enemydeath"),
                             Animation.PlayMode.NORMAL))
+                    ));
+                    break;
+                case EFFECT_LOOT_CRYSTAL:
+                    effectAnimations.put(key, Map.ofEntries(
+                        Map.entry(EffectState.IDLE, new Animation<>(
+                        1/6f,
+                        atlas.findRegions("crystalshard"),
+                        Animation.PlayMode.LOOP))
                     ));
                     break;
             }
@@ -278,29 +355,18 @@ public class AnimationManager {
         return effectAnimations.get(key);
     }
 
-    public Animation<TextureRegion> getLootAnim(AnimationKeys key) {
-        if (!lootAnimations.containsKey(key)) {
-            lootAnimations.put(key, new Animation<>(
-                1/6f,
-                atlas.findRegions("crystalshard"),
-                Animation.PlayMode.LOOP
-            ));
+    public Map<EffectState, List<AnimationEvent>> getEffectAnimEvents(AnimationKey key) {
+        if (!effectAnimationEvents.containsKey(key)) {
+            switch (key) {
+                default:
+                    effectAnimationEvents.put(key, Map.ofEntries(
+                        Map.entry(EffectState.IDLE, Arrays.asList(
+                            new AnimationEvent(0 / 60f, "test")
+                        ))
+                    ));
+                    break;
+            }
         }
-        return lootAnimations.get(key);
-    }
-
-    public enum AnimationKeys {
-        PLAYER,
-        ENEMY_LIZARD,
-        ENEMY_BAT,
-        ENEMY_SPIKYLIZARD,
-        ENEMY_MANTICORE,
-        EFFECT_FIREBALL,
-        EFFECT_EXPLOSION,
-        EFFECT_CLAWSWIPE,
-        EFFECT_SLASH,
-        EFFECT_PROJECTILESHOOT,
-        EFFECT_ENEMYDEATH,
-        LOOT_CRYSTAL
+        return effectAnimationEvents.get(key);
     }
 }

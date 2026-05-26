@@ -2,7 +2,7 @@ package io.github.dragonplatformer;
 
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
-import io.github.dragonplatformer.Entity.Creature.Player.Player;
+import io.github.dragonplatformer.Entity.Actor.Player.Player;
 
 public class GameInputProcessor implements InputProcessor {
     private final Player player;
@@ -39,7 +39,7 @@ public class GameInputProcessor implements InputProcessor {
                 player.input.setGuard(true);
                 break;
             case Input.Keys.CONTROL_LEFT:
-                player.input.setDodge(true);
+                player.input.setEvade(true);
                 break;
             case Input.Keys.E:
                 player.input.setProjectile(true);
@@ -74,7 +74,7 @@ public class GameInputProcessor implements InputProcessor {
                 player.input.setGuard(false);
                 break;
             case Input.Keys.CONTROL_LEFT:
-                player.input.setDodge(false);
+                player.input.setEvade(false);
                 break;
             case Input.Keys.E:
                 player.input.setProjectile(false);
