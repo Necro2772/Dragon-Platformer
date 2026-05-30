@@ -6,6 +6,7 @@ import io.github.dragonplatformer.Entity.AnimationManager;
 
 public class EnemyDeathVisual extends AttackVisual {
     public EnemyDeathVisual(float x, float y, AnimationManager animManager, World world) {
-        super(x, y, 2, 2, 1, AnimationKey.EFFECT_ENEMYDEATH, animManager, world);
+        super(x, y, 2, 2, AnimationKey.EFFECT_ENEMYDEATH, animManager, world);
+        init();
     }
 }

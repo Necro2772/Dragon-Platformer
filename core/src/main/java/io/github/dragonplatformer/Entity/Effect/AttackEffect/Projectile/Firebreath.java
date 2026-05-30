@@ -8,8 +8,8 @@ import io.github.dragonplatformer.Entity.AnimationManager;
 public class Firebreath extends Projectile {
     private final Vector2 windForce;
     private final float curve;
-    public Firebreath(float damage, float knockback, float health, Vector2 aimDirection, float lifetime, float x, float y, float width, float height, int direction, AnimationManager animManager, boolean isPlayer, World world) {
-        super(damage, knockback, health, lifetime, x, y, width, height, direction,
+    public Firebreath(float damage, float knockback, float health, Vector2 aimDirection, float lifetime, float x, float y, float width, float height, AnimationManager animManager, boolean isPlayer, World world) {
+        super(damage, knockback, health, lifetime, x, y, width, height,
             AnimationKey.EFFECT_FIREBALL, animManager, isPlayer, world);
         setReflectOnStatic();
         setPassThroughEnemies();

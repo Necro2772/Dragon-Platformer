@@ -17,27 +17,24 @@ public abstract class AttackEffect extends Effect {
     private float hitCD;
     private int hitGroup;
 
-    public AttackEffect(float damage, float knockback, float x, float y, float width, float height, int direction,
+    public AttackEffect(float damage, float knockback, float x, float y, float width, float height,
                         AnimationKey animKey, AnimationManager animManager, World world) {
         super(x, y, width, height, animKey, animManager, world);
         this.knockback = knockback;
         this.damage = damage;
-        setSpriteDirection(direction);
-        init();
     }
 
-    public AttackEffect(float damage, float knockback, float width, float height, int direction,
+    public AttackEffect(float damage, float knockback, float width, float height,
                         AnimationKey animKey, AnimationManager animManager, Body body) {
         super(width, height, animKey, animManager, body);
         this.knockback = knockback;
         this.damage = damage;
-        setSpriteDirection(direction);
-        init();
     }
 
-    private void init() {
-        stateTime = 0;
-        state = EffectState.IDLE;
+    @Override
+    public void init() {
+        super.init();
+        useHitEffect = false;
         rotation = 0;
         positionOffset = new Vector2();
         hitCD = -1;
@@ -77,6 +74,11 @@ public abstract class AttackEffect extends Effect {
         return new Vector2(positionOffset);
     }
 
+    @Override
+    public Vector2 getPosition() {
+        return super.getPosition().add(getPositionOffset());
+    }
+
     public void onHit() { }
 
     @Override
@@ -99,8 +101,12 @@ public abstract class AttackEffect extends Effect {
         }
     }
 
+    /**
+     * Sets the rotation in degrees
+     * @param rotation in degrees
+     */
     public void setRotation(float rotation) {
-        this.rotation =(rotation + 90) % 180 - 90;
+        this.rotation = (rotation + 90) % 180 - 90;
     }
 
     public float getRotation() {

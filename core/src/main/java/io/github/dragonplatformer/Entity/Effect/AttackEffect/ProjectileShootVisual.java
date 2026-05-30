@@ -5,7 +5,8 @@ import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
 
 public class ProjectileShootVisual extends AttackVisual {
-    public ProjectileShootVisual(float x, float y, int direction, AnimationManager animManager, World world) {
-        super(x, y, 1, 2, direction, AnimationKey.EFFECT_PROJECTILESHOOT, animManager, world);
+    public ProjectileShootVisual(float x, float y, AnimationManager animManager, World world) {
+        super(x, y, 1, 2, AnimationKey.EFFECT_PROJECTILESHOOT, animManager, world);
+        init();
     }
 }

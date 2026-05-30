@@ -8,7 +8,10 @@ import io.github.dragonplatformer.Entity.Effect.AttackEffect.EnemyDeathVisual;
 import io.github.dragonplatformer.Entity.Actor.Actor;
 import io.github.dragonplatformer.Entity.Actor.Player.Player;
 import io.github.dragonplatformer.Entity.Effect.Loot.Crystal;
+import io.github.dragonplatformer.Entity.MovementType;
 import io.github.dragonplatformer.GameContactListener;
+
+import java.util.ArrayList;
 
 public abstract class Enemy extends Actor<EnemyState> {
     private final PlayerLOSRay losRay;
@@ -16,6 +19,10 @@ public abstract class Enemy extends Actor<EnemyState> {
     private Vector2 playerSensorCenter;
     private int playerSensorIndex;
     private final FixtureDef playerSensorDef;
+    private final ArrayList<Fixture> nearbyEnemies;
+    private float disperseDist;
+    private int nearbyEnemySensorIndex;
+    private final FixtureDef nearbyEnemySensorDef;
 
     public Enemy(float x, float y, float width, float height, World world,
                  AnimationManager animManager, AnimationKey animKey) {
@@ -34,8 +41,17 @@ public abstract class Enemy extends Actor<EnemyState> {
         playerSensorSize = new Vector2(15, 10);
         playerSensorCenter = new Vector2(0, -playerSensorSize.y/2);
 
-        this.setStats(new EnemyStats(1));
+        this.setStats(new EnemyStats());
         playerSensorIndex = -1;
+        nearbyEnemySensorIndex = -1;
+
+        nearbyEnemies = new ArrayList<>();
+        nearbyEnemySensorDef = new FixtureDef();
+        nearbyEnemySensorDef.filter.categoryBits = GameContactListener.FilterBits.SENSOR.getBit();
+        nearbyEnemySensorDef.filter.maskBits = GameContactListener.FilterBits.NONE.getBit();
+        nearbyEnemySensorDef.filter.groupIndex = GameContactListener.FilterGroup.ENEMYDEFAULT.getBit();
+        nearbyEnemySensorDef.isSensor = true;
+        setDisperseDist(5);
     }
 
     @Override
@@ -47,6 +63,13 @@ public abstract class Enemy extends Actor<EnemyState> {
         Fixture playerSensorFixture = getBody().createFixture(playerSensorDef);
         playerSensorIndex = getBody().getFixtureList().indexOf(playerSensorFixture, true);
         playerSensorShape.dispose();
+
+        CircleShape nearbyEnemyShape = new CircleShape();
+        nearbyEnemyShape.setRadius(disperseDist);
+        nearbyEnemySensorDef.shape = nearbyEnemyShape;
+        Fixture nearbyEnemyFixture = getBody().createFixture(nearbyEnemySensorDef);
+        nearbyEnemySensorIndex = getBody().getFixtureList().indexOf(nearbyEnemyFixture, true);
+        nearbyEnemyShape.dispose();
     }
 
     public void setPlayerSensorShape(Vector2 playerSensorSize) {
@@ -61,6 +84,10 @@ public abstract class Enemy extends Actor<EnemyState> {
         stats().setAggroRange(playerSensorSize.x * 2);
     }
 
+    public void setDisperseDist(float disperseDist) {
+        this.disperseDist = disperseDist;
+    }
+
     @Override
     public void act(float delta) {
         super.act(delta);
@@ -73,10 +100,7 @@ public abstract class Enemy extends Actor<EnemyState> {
                 return;
             }
             else if (getState().nextState() != null) {
-                endState();
-                state = getState().nextState();
-                stateTime = 0;
-                beginState();
+                setState(getState().nextState());
             }
         }
         if (stats().isPlayerInRange() && !stats().isPlayerSighted()) {
@@ -89,10 +113,35 @@ public abstract class Enemy extends Actor<EnemyState> {
                 stats().setPlayerSighted(false);
             }
         }
-        stats().update(delta);
         if (stats().isPlayerSighted() && getState().isNonBlocking()) {
             if (getBody().getPosition().x < stats().getPlayerPos().x) setSpriteDirection(1);
             else setSpriteDirection(-1);
+        }
+        if (!nearbyEnemies.isEmpty()) {
+            float disperseTotal = 0;
+            float disperseDist2 = (float) Math.pow(disperseDist, 2);
+            for (Fixture enemy : nearbyEnemies) {
+                disperseTotal += stats().getDisperseForce() *
+                    (disperseDist2 - getPosition().dst2(enemy.getBody().getPosition())) / disperseDist2;
+            }
+            applyWeightedForce(getNearbyEnemyDirection().scl(-disperseTotal));
+        }
+        updateMovementType();
+    }
+
+    private void updateMovementType() {
+        if (stats().isPlayerSighted()) {
+            getTargetPos().set(stats().getPlayerPos());
+            float dst2 = stats().getPlayerPos().dst2(getPosition());
+            if (dst2 < stats().getMinDst2()) {
+                setMovementType(MovementType.FLEE);
+            } else if (dst2 < stats().getMaxDst2()) {
+                setMovementType(MovementType.CAUTION);
+            } else {
+                setMovementType(MovementType.APPROACH);
+            }
+        } else {
+            setMovementType(MovementType.IDLE);
         }
     }
 
@@ -106,6 +155,9 @@ public abstract class Enemy extends Actor<EnemyState> {
                 stats().setPlayerVel(contactFixture.getBody().getLinearVelocity());
             }
         }
+        if (getBody().getFixtureList().indexOf(entityFixture, true) == nearbyEnemySensorIndex) {
+            if (nearbyEnemies.size() <= 5) nearbyEnemies.add(contactFixture);
+        }
     }
 
     @Override
@@ -115,6 +167,9 @@ public abstract class Enemy extends Actor<EnemyState> {
             if (contactFixture.getUserData() instanceof Player) {
                 stats().setPlayerInRange(false);
             }
+        }
+        if (getBody().getFixtureList().indexOf(entityFixture, true) == nearbyEnemySensorIndex) {
+            nearbyEnemies.remove(contactFixture);
         }
     }
 
@@ -143,6 +198,16 @@ public abstract class Enemy extends Actor<EnemyState> {
     @Override
     public EnemyStats stats() {
         return (EnemyStats) super.stats();
+    }
+
+    private Vector2 getNearbyEnemyDirection() {
+        if (nearbyEnemies.isEmpty()) return new Vector2();
+        Vector2 average = new Vector2(nearbyEnemies.get(0).getBody().getPosition());
+        for (int i = 1; i < nearbyEnemies.size(); i++) {
+            average.add(nearbyEnemies.get(i).getBody().getPosition());
+        }
+        average.scl(1f / nearbyEnemies.size());
+        return average.sub(getPosition()).nor();
     }
 
     protected Vector2 getPredictedPlayerPos(float time) {

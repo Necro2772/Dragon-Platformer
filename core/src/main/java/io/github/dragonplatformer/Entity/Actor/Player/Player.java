@@ -1,6 +1,5 @@
 package io.github.dragonplatformer.Entity.Actor.Player;
 
-import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import io.github.dragonplatformer.Entity.AnimationEvent;
@@ -57,6 +56,7 @@ public class Player extends Actor<PlayerState> {
 
         enemyContact = 0;
         //getBody().setGravityScale(0.8f);
+        setAutoMove(false);
 
     }
 
@@ -90,13 +90,7 @@ public class Player extends Actor<PlayerState> {
                 input().resetProjectileCharge();
                 return;
             } else if (input().evade) {
-                if (input().upMove) {
-                    setState(PlayerState.EVADE_UP);
-                } else if (input().downMove) {
-                    setState(PlayerState.EVADE_DOWN);
-                } else {
-                    setState(PlayerState.EVADE);
-                }
+                setState(PlayerState.EVADE);
                 input().setEvade(false);
                 return;
             }
@@ -114,34 +108,26 @@ public class Player extends Actor<PlayerState> {
 
         if (input().getEvadeDash()) {
             input().setEvadeDash(false);
-            switch (getState()) {
-                case EVADE:
-                    setState(PlayerState.EVADE_DASH);
-                    return;
-                case EVADE_DOWN:
-                    setState(PlayerState.EVADE_DASH_DOWN);
-                    return;
-                case EVADE_UP:
-                    setState(PlayerState.EVADE_DASH_UP);
-                    return;
-            }
+            if (input().upMove) setState(PlayerState.EVADE_UP);
+            else if (input().downMove) setState(PlayerState.EVADE_DOWN);
+            else setState(PlayerState.EVADE_HORIZONTAL);
         }
 
         PlayerState nextState = PlayerState.IDLE;
         if (isGrounded()) {
             if (input().getInputDirection() != 0) nextState = PlayerState.RUNNING;
-            if (input().upMove) nextState = PlayerState.JUMPING;
+            if (input().upMove) nextState = PlayerState.JUMP;
         } else {
             if (input().isGliding()) {
-                nextState = PlayerState.GLIDING;
+                nextState = PlayerState.GLIDE;
                 if (input().upMove) nextState = PlayerState.SOAR;
             } else {
                 nextState = PlayerState.FLYING;
                 if (input().upMove && stats().getJumpCD() <= 0) {
-                    nextState = PlayerState.JUMPING;
+                    nextState = PlayerState.JUMP;
                 }
             }
-            if (input.downMove) nextState = PlayerState.DIVING;
+            if (input.downMove) nextState = PlayerState.DIVE;
         }
 
         if (stats().getHealth() <= 0) {
@@ -205,40 +191,40 @@ public class Player extends Actor<PlayerState> {
         if (input.upMove) impulse.y = stats().projectileSpeed;
         else if (input.downMove) impulse.y = -stats().projectileSpeed;
         switch (type) {
-            case FIREBREATH:
-                projectile = new Firebreath(0.5f, 0f, 1f, impulse, 0.5f - input.breathCount / 30, pos.x, pos.y,
-                    2f, 1, getSpriteDirection(), animManager, true, getBody().getWorld());
-                impulse.rotateDeg((float) Math.random() * 60 - 30);
-                impulse.scl(0.6f, 0.9f);
-                break;
-            case FIREBALL_LARGE:
-                projectile = new ExplosiveFireball(4, 5, 5, pos.x, pos.y, 3, 1,
-                    getSpriteDirection(), animManager, true, getBody().getWorld());
-                //recoil(new Vector2(getBody().getPosition().add(impulse)), 30);
-                new ProjectileShootVisual(pos.x - getSpriteDirection(), pos.y, getSpriteDirection(), animManager, getBody().getWorld())
-                    .setRotation(impulse.angleDeg());
-                break;
-            case FIREBALL_MEDIUM:
-                projectile = new Fireball(2, 4, 2, pos.x, pos.y, 2.5f, 1,
-                    getSpriteDirection(), animManager, true, getBody().getWorld());
-                //recoil(new Vector2(getBody().getPosition().add(impulse)), 15);
-                new ProjectileShootVisual(pos.x - getSpriteDirection(), pos.y, getSpriteDirection(), animManager, getBody().getWorld())
-                    .setRotation(impulse.angleDeg());
-                break;
+//            case FIREBREATH:
+//                projectile = new Firebreath(0.5f, 0f, 1f, impulse, 0.5f - input.breathCount / 30, pos.x, pos.y,
+//                    2f, 1, getSpriteDirection(), animManager, true, getBody().getWorld());
+//                impulse.rotateDeg((float) Math.random() * 60 - 30);
+//                impulse.scl(0.6f, 0.9f);
+//                break;
+//            case FIREBALL_LARGE:
+//                projectile = new ExplosiveFireball(4, 5, 5, pos.x, pos.y, 3, 1,
+//                    getSpriteDirection(), animManager, true, getBody().getWorld());
+//                //recoil(new Vector2(getBody().getPosition().add(impulse)), 30);
+//                new ProjectileShootVisual(pos.x - getSpriteDirection(), pos.y, getSpriteDirection(), animManager, getBody().getWorld())
+//                    .setRotation(impulse.angleDeg());
+//                break;
+//            case FIREBALL_MEDIUM:
+//                projectile = new Fireball(2, 4, 2, pos.x, pos.y, 2.5f, 1,
+//                    getSpriteDirection(), getPosition().add(getSpriteDirection(), 0), animManager, true, getBody().getWorld());
+//                //recoil(new Vector2(getBody().getPosition().add(impulse)), 15);
+//                new ProjectileShootVisual(pos.x - getSpriteDirection(), pos.y, getSpriteDirection(), animManager, getBody().getWorld())
+//                    .setRotation(impulse.angleDeg());
+//                break;
             case FIREBALL_BASIC:
             default:
-                projectile = new Fireball(1, 3, 1, pos.x, pos.y, 2, 1,
-                    getSpriteDirection(), animManager, true, getBody().getWorld());
+                projectile = new Fireball(1, 3, 1, pos.x, pos.y, 1,
+                    new Vector2(pos).add(getSpriteDirection(), 0), animManager, true, getBody().getWorld());
         }
-        projectile.getBody().applyLinearImpulse(impulse, new Vector2(0, 0), true);
-        projectile.setRotation(impulse.angleDeg());
+        //projectile.getBody().applyLinearImpulse(impulse, new Vector2(0, 0), true);
+        //projectile.setRotation(impulse.angleDeg());
     }
 
     private void updatePlayerMovement(float delta) {
         Vector2 accel = new Vector2(stats().groundAccX, 0);
         Vector2 maxVel = new Vector2(stats().groundVelX, 0);
         Vector2 vel = getBody().getLinearVelocity();
-        Vector2 damping = new Vector2(0, 0);
+        if (vel.y < 0) getDamping().y = stats().fallDamping;
         boolean gravityEnabled = true;
 
         if (input.getInputDirection() != 0 && getSpriteDirection() != input.getInputDirection()
@@ -247,48 +233,43 @@ public class Player extends Actor<PlayerState> {
         }
 
         switch (getState()) {
-            case DIVING:
+            case DIVE:
                 maxVel.set(stats().diveVelX, stats().diveVelY);
                 accel.set(stats().diveAccX, stats().diveAccY);
                 gravityEnabled = false;
                 stats().chargeSoar(delta);
                 stats().chargeGlide(delta);
-                if (stats().glideCharge > stats().glideChargeMin) input().setGlide(true);
+                if (stats().getGlideCharge() > stats().glideChargeMin) input().setGlide(true);
                 break;
             case SOAR:
                 maxVel.set(stats().diveVelX, stats().soarVelY);
                 accel.set(stats().diveAccX, stats().soarAccY);
                 gravityEnabled = false;
                 if (vel.y >= 0) stats().chargeSoar(-delta);
-                if (stats().soarCharge <= 0) stats().chargeGlide(-delta);
+                if (stats().getSoarCharge() <= 0) stats().chargeGlide(-delta);
                 break;
-            case GLIDING:
+            case GLIDE:
                 maxVel.set(stats().glideVelX, stats().glideVelY);
                 accel.set(stats().glideAccX, stats().glideAccY);
+                getDamping().y = stats().glideDampingY;
                 if (Math.abs(vel.x) < stats().glideVelX * 0.8f || input().getInputDirection() == 0)
                     stats().chargeGlide(-delta * 2);
                 break;
             case EVADE:
                 maxVel.x = stats().evadeVelX;
                 accel.x = stats().evadeAccX;
-                damping.set(stats().evadeDamping, stats().evadeDampingSmall);
+                getDamping().set(stats().evadeDamping, stats().evadeDamping);
                 break;
-            case EVADE_DASH:
+            case EVADE_HORIZONTAL:
                 maxVel.x = stats().glideVelX;
                 accel.x = stats().glideAccX;
                 gravityEnabled = false;
                 break;
             case EVADE_DOWN:
             case EVADE_UP:
-                maxVel.x = stats().evadeVelX;
-                accel.x = stats().evadeAccX;
-                damping.set(stats().evadeDampingSmall, stats().evadeDamping);
-                break;
-            case EVADE_DASH_DOWN:
-            case EVADE_DASH_UP:
                 gravityEnabled = false;
                 break;
-            case JUMPING:
+            case JUMP:
                 maxVel.x = stats().flyVelX;
                 accel.x = stats().jumpAccX;
                 break;
@@ -311,9 +292,9 @@ public class Player extends Actor<PlayerState> {
                 break;
         }
 
-        if (isGrounded() || (input.isGliding() && stats().glideCharge <= 0)) {
+        if (isGrounded() || (input.isGliding() && stats().getGlideCharge() <= 0)) {
             input().setGlide(false);
-            stats().glideCharge = 0;
+            stats().chargeGlide(-delta);
         }
 
         // Input based movement
@@ -334,34 +315,7 @@ public class Player extends Actor<PlayerState> {
         } else {
             applyWeightedForce(getMoveDirection() * -5, 0);
         }
-        if (damping.x != 0 || damping.y != 0) {
-            applyWeightedForce(
-                (damping.x / 100 * -vel.x * Math.abs(vel.x)),
-                (damping.y / 100 * -vel.y * Math.abs(vel.y))
-            );
-        }
         if (!gravityEnabled) applyWeightedForce(0, -getBody().getWorld().getGravity().y);
-    }
-
-    public void meleeHitEffect() {
-        Vector2 vel = getBody().getLinearVelocity();
-        switch (getState()) {
-            case ATTACK_FORWARD1:
-            case ATTACK_FORWARD2:
-                applyWeightedImpulse(-getSpriteDirection() * 5f, 0);
-                break;
-            case ATTACK_GLIDE:
-                setState(PlayerState.ATTACK_GLIDE_HIT);
-                applyWeightedImpulse(vel.x * -2, 10);
-                break;
-            case ATTACK_DIVE:
-                setState(PlayerState.ATTACK_DIVE_LAND);
-                applyWeightedImpulse(0, 5 - vel.y);
-                break;
-            case ATTACK_SOAR:
-                applyWeightedImpulse(0, 5 - vel.y);
-                break;
-        }
     }
 
     @Override
@@ -370,90 +324,107 @@ public class Player extends Actor<PlayerState> {
         Vector2 pos = getBody().getPosition();
         input.resetMeleeHit();
         switch(state) {
-            case JUMPING:
+            case JUMP:
                 float jumpForce = stats().jumpImpulseAir;
                 if (input().numJumps == stats().getMaxJumps()) jumpForce = stats().jumpImpulseGround;
                 applyWeightedImpulse(0, jumpForce - vel.y * 0.8f);
                 input().numJumps--;
                 stats().resetJumpCD();
                 break;
-            case GLIDING:
-                if (stats().glideCharge > stats().glideChargeMin) {
+            case GLIDE:
+                if (stats().getGlideCharge() > stats().glideChargeMin) {
                     applyWeightedImpulse(new Vector2(
                         input().getInputDirection() * stats().glideImpulseX,
                         stats().glideImpulseY
                     ));
                 }
-                stats().glideCharge = stats().glideChargeBase;
+                stats().setGlideCharge(stats().glideChargeBase);
                 break;
-            case EVADE:
-                new ProjectileShootVisual(pos.x, pos.y, getSpriteDirection(), animManager, getBody().getWorld());
-                applyWeightedImpulse(getSpriteDirection() * stats().evadeImpulse - vel.x, -vel.y * 0.5f);
+            case DIVE:
+                applyWeightedImpulse(0, -stats().diveImpulseY);
                 break;
-            case EVADE_DOWN:
-                new ProjectileShootVisual(pos.x, pos.y, getSpriteDirection(), animManager, getBody().getWorld());
-                applyWeightedImpulse(-vel.x * 0.5f, -stats().evadeImpulse - vel.y);
+            case SOAR:
+                stats().chargeSoar(-0.1f);
+                applyWeightedImpulse(0, stats().soarImpulseY);
                 break;
-            case EVADE_UP:
-                new ProjectileShootVisual(pos.x, pos.y, getSpriteDirection(), animManager, getBody().getWorld());
-                applyWeightedImpulse(-vel.x * 0.5f, stats().evadeImpulse - vel.y);
-                break;
-            case EVADE_DASH:
+            case EVADE_HORIZONTAL:
                 input().setGlide(true);
                 stats().chargeGlide(0.5f);
                 stats().chargeSoar(0.5f);
                 break;
-            case EVADE_DASH_DOWN:
+            case EVADE_UP:
+                input().setGlide(true);
+                stats().chargeGlide(0.5f);
+                stats().chargeSoar(0.5f);
                 break;
-            case EVADE_DASH_UP:
-                break;
-            case SOAR:
-                stats().chargeSoar(-0.1f);
+            case EVADE_DOWN:
+                input().setGlide(true);
+                stats().chargeGlide(0.5f);
+                stats().chargeSoar(0.5f);
                 break;
             case ATTACK_GROUND1:
             case ATTACK_FORWARD1:
-                new Claw(1, 1, 4, 4, new Vector2(3f * getSpriteDirection(), 0),
-                    getSpriteDirection(), animManager, getBody());
+                new Claw(1, 1, 3, 1,
+                    getHitboxPosition().add(2f * getSpriteDirection(), 0),
+                    animManager, getBody());
                 break;
             case ATTACK_GROUND2:
             case ATTACK_FORWARD2:
-                new Claw(1, 1, 4, 4, new Vector2(3f * getSpriteDirection(), 0),
-                    -getSpriteDirection(), animManager, getBody());
+                new Claw(1, 1, 3, 1,
+                    getHitboxPosition().add(2f * getSpriteDirection(), 0), animManager, getBody())
+                    .setSpriteDirection(-1);
                 break;
             case ATTACK_DOWN:
-                new Claw(1, 3, 5, 3, new Vector2(0.5f * getSpriteDirection(), -2),
-                    getSpriteDirection(), animManager, getBody());
+                new Claw(1, 1, 2, 2,
+                    getHitboxPosition().add(0, -2), animManager, getBody());
                 break;
             case ATTACK_UP:
-                new Claw(1, 3, 6, 4.5f, new Vector2(0, 2),
-                    getSpriteDirection(), animManager, getBody());
+                new Claw(1, 1, 2, 2, getHitboxPosition().add(0, 2),
+                    animManager, getBody());
                 break;
             case ATTACK_GLIDE:
                 applyWeightedImpulse(stats().attackGlideImpulseX * getMoveDirection(), stats().attackGlideImpulseY);
-                new Claw(0, 0, 3, 3, new Vector2(2f * getSpriteDirection(), 0),
-                    getSpriteDirection(), animManager, getBody());
+                new Claw(1, 0, 1, 1,
+                    getHitboxPosition().add(2f * getSpriteDirection(), 0), animManager, getBody());
                 break;
             case ATTACK_DIVE:
-                new Claw(0, 0, 2, 3, new Vector2(0, -2),
-                    getSpriteDirection(), animManager, getBody());
+                new Claw(0, 0, 2, 1, getHitboxPosition().add(0, -1),
+                    animManager, getBody());
                 break;
             case ATTACK_DIVE_LAND:
-                new Claw(1, 4, 6, 3, new Vector2(0, -0.5f),
-                    getSpriteDirection(), animManager, getBody());
+                new Claw(1, 4, 4, 1, getHitboxPosition().add(0, -1),
+                    animManager, getBody());
                 break;
             case ATTACK_SOAR:
-                new Claw(0, 0, 4, 4.5f, new Vector2(0, 2),
-                    getSpriteDirection(), animManager, getBody());
+                new Claw(1, 0, 2, 2, getHitboxPosition().add(0, 2),
+                    animManager, getBody());
+                break;
+        }
+    }
+
+    public void meleeHitEffect() {
+        Vector2 vel = getBody().getLinearVelocity();
+        switch (getState()) {
+            case ATTACK_FORWARD1:
+            case ATTACK_FORWARD2:
+                applyWeightedImpulse(getSpriteDirection() * -stats().recoilAttackGroundX, 0);
+                break;
+            case ATTACK_GLIDE:
+                setState(PlayerState.ATTACK_GLIDE_HIT);
+                applyWeightedImpulse(-vel.x + getSpriteDirection() * -stats().recoilAttackGlideX, stats().recoilAttackGlideY);
+                break;
+            case ATTACK_DIVE:
+                setState(PlayerState.ATTACK_DIVE_LAND);
+                //applyWeightedImpulse(0, stats().recoilAttackDiveY - vel.y);
+                break;
+            case ATTACK_SOAR:
+                applyWeightedImpulse(0, stats().recoilAttackSoarY - vel.y);
                 break;
         }
     }
 
     @Override
     protected void endState() {
-        Vector2 vel = getBody().getLinearVelocity();
-        if (getState() == PlayerState.EVADE_DASH) {
-            getBody().setLinearVelocity(MathUtils.clamp(vel.x, -5, 5), vel.y);
-        }
         if (stats().isEvading()) stats().setEvading(false);
         if (stats().isiFramesActive()) stats().setiFramesActive(false);
     }
@@ -494,7 +465,7 @@ public class Player extends Actor<PlayerState> {
 
     @Override
     public boolean isGrounded() {
-        return super.isGrounded() && getState() != PlayerState.JUMPING;
+        return super.isGrounded() && getState() != PlayerState.JUMP;
     }
 
     @Override

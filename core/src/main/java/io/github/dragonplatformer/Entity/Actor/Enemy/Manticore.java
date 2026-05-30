@@ -21,7 +21,7 @@ public class Manticore extends Enemy {
         setPlayerSensorShape(new Vector2(30, 20));
         stats().setAggroRange(100);
         init();
-        stats().init(100);
+        stats().setMaxHealth(100);
         target = new Vector2();
         attackTimer = 0;
         //setStunOnHit(false);
@@ -160,13 +160,13 @@ public class Manticore extends Enemy {
         float spread = 120;
         for (int i = 0; i < numProjectiles; i++) {
             Fireball projectile = new Fireball(1, 10, 2, getBody().getPosition().x, getBody().getPosition().y,
-                2, 2, -1, animManager, false, getBody().getWorld());
-            float rot = spread * (i) / (numProjectiles - 1) - spread / 2;
-            Vector2 aim = new Vector2(stats().getPlayerPos()).sub(projectile.getBody().getPosition()).rotateDeg(rot);
-            projectile.setRotation(aim.angleDeg());
-            if (Math.abs(aim.angleDeg() - 180) > 90) projectile.setSpriteDirection(1);
-            else projectile.setSpriteDirection(-1);
-            projectile.getBody().applyLinearImpulse(aim.setLength(30), projectile.getBody().getPosition(), true);
+                2, new Vector2(stats().getPlayerPos()), animManager, false, getBody().getWorld());
+//            float rot = spread * (i) / (numProjectiles - 1) - spread / 2;
+//            Vector2 aim = new Vector2(stats().getPlayerPos()).sub(projectile.getBody().getPosition()).rotateDeg(rot);
+//            projectile.setRotation(aim.angleDeg());
+//            if (Math.abs(aim.angleDeg() - 180) > 90) projectile.setSpriteDirection(1);
+//            else projectile.setSpriteDirection(-1);
+//            projectile.getBody().applyLinearImpulse(aim.setLength(30), projectile.getBody().getPosition(), true);
         }
     }
 }

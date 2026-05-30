@@ -9,8 +9,8 @@ public class PlayerStats extends ActorStats {
     private float jumpCD;
     public float projectileSpeed = 25;
     private int crystals;
-    public float soarCharge;
-    public float glideCharge;
+    private float soarCharge;
+    private float glideCharge;
     private boolean evading;
     private boolean iFramesActive;
 
@@ -25,25 +25,34 @@ public class PlayerStats extends ActorStats {
     public float evadeVelX = 0;
 
     public float groundAccX = 60;
-    public float glideAccX = 12f;
-    public float glideAccY = 60;
-    public float jumpAccX = 48f;
-    public float flyAccX = 12f;
-    public float diveAccX = 48f;
-    public float diveAccY = -36f;
-    public float soarAccY = 72f;
-    public float evadeAccX = 0f;
+    public float glideAccX = 12;
+    public float glideAccY = 0;
+    public float jumpAccX = 48;
+    public float flyAccX = 12;
+    public float diveAccX = 48;
+    public float diveAccY = -36;
+    public float soarAccY = 72;
+    public float evadeAccX = 0;
 
     public float glideImpulseX = 4;
     public float glideImpulseY = 0;
+    public float diveImpulseY = 2;
+    public float soarImpulseY = 2;
     public float jumpImpulseAir = 10;
     public float jumpImpulseGround = 12;
     public float evadeImpulse = 40;
     public float attackGlideImpulseX = 2;
     public float attackGlideImpulseY = 4;
+    public float recoilAttackGroundX = 2;
+    public float recoilAttackGlideX = 10;
+    public float recoilAttackGlideY = 10;
+    public float recoilAttackDiveY = 5;
+    public float recoilAttackSoarY = 5;
 
+    public float fallDamping = 20;
     public float evadeDamping = 30;
     public float evadeDampingSmall = 10;
+    public float glideDampingY = 80;
 
     // GlideCharge
     public float glideChargeBase = 0.1f;
@@ -52,7 +61,8 @@ public class PlayerStats extends ActorStats {
     public float soarChargeMax = 1f;
 
     public PlayerStats() {
-        super(20);
+        super();
+        setMaxHealth(20);
         setMaxJumps(4);
         setProjectileMaxCD(0.5f);
         setProjectileCD(0);
@@ -133,11 +143,23 @@ public class PlayerStats extends ActorStats {
     }
 
     public void chargeSoar(float charge) {
-        this.soarCharge = Math.max(Math.min(soarCharge + charge, soarChargeMax), 0);
+        this.soarCharge = Math.max(Math.min(getSoarCharge() + charge, soarChargeMax), 0);
+    }
+
+    public float getSoarCharge() {
+        return soarCharge;
     }
 
     public void chargeGlide(float charge) {
-        this.glideCharge = Math.max(Math.min(glideCharge + charge, glideChargeMax), 0);
+        this.glideCharge = Math.max(Math.min(getGlideCharge() + charge, glideChargeMax), 0);
+    }
+
+    public float getGlideCharge() {
+        return glideCharge;
+    }
+
+    public void setGlideCharge(float glideCharge) {
+        this.glideCharge = glideCharge;
     }
 
     public void setEvading(boolean evading) {

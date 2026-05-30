@@ -393,8 +393,8 @@ public class GameScreen implements Screen {
                 "VelX: %.2f%n" +
                 "VelY: %.2f",
             player.getState(), player.getStateTime(), player.input().numJumps,
-            player.stats().getHealth(), player.stats().getCrystals(), player.stats().glideCharge,
-            player.stats().soarCharge, player.input().glide, player.stats().isEvading(), player.stats().isIntangible(),
+            player.stats().getHealth(), player.stats().getCrystals(), player.stats().getGlideCharge(),
+            player.stats().getSoarCharge(), player.input().glide, player.stats().isEvading(), player.stats().isIntangible(),
             player.getBody().getLinearVelocity().x, player.getBody().getLinearVelocity().y
             ));
         debugInfo.pack();

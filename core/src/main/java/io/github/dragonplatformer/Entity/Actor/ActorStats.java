@@ -10,9 +10,8 @@ public class ActorStats {
     public final Map<Integer, Float> hitMap;
     public boolean intangible;
 
-    public ActorStats(int maxHealth) {
-        setMaxHealth(maxHealth);
-        setHealth(maxHealth);
+    public ActorStats() {
+        setMaxHealth(1);
         setInvulnerability(0);
         hitMap = new HashMap<>();
         setIntangible(false);
@@ -40,6 +39,7 @@ public class ActorStats {
 
     public void setMaxHealth(float maxHealth) {
         this.maxHealth = maxHealth;
+        this.health = maxHealth;
     }
 
     public float getHealth() {

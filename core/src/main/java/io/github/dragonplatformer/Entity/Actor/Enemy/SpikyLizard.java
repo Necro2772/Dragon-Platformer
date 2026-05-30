@@ -14,7 +14,7 @@ public class SpikyLizard extends Enemy {
         //setHitboxShape(new Vector2(2, 2));
         setPlayerSensorShape(new Vector2(16, 8));
         init();
-        stats().init(10);
+        stats().setMaxHealth(10);
         stats().setCrystalLoot(10);
     }
 
@@ -36,11 +36,13 @@ public class SpikyLizard extends Enemy {
                 case ATTACKING:
                     Vector2 vel = getBody().getLinearVelocity();
                     if (vel.x * getSpriteDirection() > 0.1f) {
-                        getBody().applyLinearImpulse(-vel.x, 0, getBody().getPosition().x, getBody().getPosition().y, true);
+                        getBody().applyLinearImpulse(-vel.x, 0, getBody().getPosition().x,
+                            getBody().getPosition().y, true);
                     }
                     if (anims.get(getState()).getKeyFrameIndex(getStateTime()) == 0
                         && anims.get(getState()).getKeyFrameIndex(getStateTime() + delta) == 1) {
-                        new Slash(1, 5, 5, 2, new Vector2(5 * getSpriteDirection(), -2), getSpriteDirection(), animManager, getBody());
+                        new Slash(1, 5, 5, 2,
+                            new Vector2(5 * getSpriteDirection(), -2), animManager, getBody());
                     }
                     break;
             }

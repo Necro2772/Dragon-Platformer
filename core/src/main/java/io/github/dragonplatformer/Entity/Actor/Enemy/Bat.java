@@ -14,7 +14,7 @@ public class Bat extends Enemy {
         super(x, y, 1f, 1f, world, animManager, AnimationKey.ENEMY_BAT);
         setPlayerSensorShape(new Vector2(15, 20), new Vector2(0, 0));
         init();
-        stats().init(1);
+        stats().setMaxHealth(1);
         stats().setCrystalLoot(2);
         getBody().setGravityScale(0.75f);
         waitTime = (float) Math.random() * 5 + 5;

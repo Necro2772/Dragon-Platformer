@@ -20,10 +20,13 @@ public class EnemyStats extends ActorStats {
     private boolean stunOnHit;
     private int crystalLoot;
     private int comboCount;
+    private float disperseForce;
     public final List<AttackEffect> activeAttackEffects;
+    private float minDst2;
+    private float maxDst2;
 
-    protected EnemyStats(int maxHealth) {
-        super(maxHealth);
+    protected EnemyStats() {
+        super();
         activeAttackEffects = new ArrayList<>();
         setAttackMaxCD(0);
         setProjectileSpd(0);
@@ -34,18 +37,9 @@ public class EnemyStats extends ActorStats {
         setStunOnHit(true);
         setCrystalLoot(0);
         resetComboCount();
-    }
-
-    public void init(int maxHealth) {
-        setMaxHealth(maxHealth);
-        setHealth(getMaxHealth());
-    }
-
-    public void init(int maxHealth, float attackMaxCD, float projectileSpd) {
-        setMaxHealth(maxHealth);
-        setHealth(getMaxHealth());
-        setAttackMaxCD(attackMaxCD);
-        setProjectileSpd(projectileSpd);
+        setDisperseForce(20);
+        setMinDst2(36);
+        setMaxDst2(100);
     }
 
     public void update(float delta) {
@@ -160,5 +154,29 @@ public class EnemyStats extends ActorStats {
 
     public void incrementComboCount() {
         this.comboCount++;
+    }
+
+    public float getDisperseForce() {
+        return disperseForce;
+    }
+
+    public void setDisperseForce(float disperseForce) {
+        this.disperseForce = disperseForce;
+    }
+
+    public float getMinDst2() {
+        return minDst2;
+    }
+
+    public void setMinDst2(float minDst2) {
+        this.minDst2 = minDst2;
+    }
+
+    public float getMaxDst2() {
+        return maxDst2;
+    }
+
+    public void setMaxDst2(float maxDst2) {
+        this.maxDst2 = maxDst2;
     }
 }

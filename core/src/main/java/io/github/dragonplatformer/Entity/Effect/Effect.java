@@ -8,21 +8,26 @@ import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.Entity;
 
 public abstract class Effect extends Entity<EffectState> {
+    private boolean isDisjointFixture;
     public Effect(float width, float height, AnimationKey animKey, AnimationManager animManager, Body body) {
         super(width, height, animManager.getEffectAnims(animKey), animManager.getEffectAnimEvents(animKey),
             animManager, body);
-        init();
+        setDisjointFixture(false);
     }
 
     public Effect(float x, float y, float width, float height, AnimationKey animKey,
                   AnimationManager animManager, World world) {
         super(x, y, width, height, animManager.getEffectAnims(animKey), animManager.getEffectAnimEvents(animKey),
             animManager, world);
-        init();
+        setDisjointFixture(false);
     }
 
-    private void init() {
+    public void init() {
         setState(EffectState.IDLE);
+        if (!isDisjointFixture()) {
+            setFloating(true);
+            getDamping().set(0, 0);
+        }
     }
 
     @Override
@@ -40,8 +45,16 @@ public abstract class Effect extends Entity<EffectState> {
     protected void beginState() {
         super.beginState();
         if (getState() == EffectState.DESTROYED) {
-            if (!anims.containsKey(EffectState.DESTROYED)) destroy();
+            if (!anims.containsKey(getState())) destroy();
         }
     }
 
+    public boolean isDisjointFixture() {
+        return isDisjointFixture;
+    }
+
+    public void setDisjointFixture(boolean disjointFixture) {
+        isDisjointFixture = disjointFixture;
+        setAutoMove(false);
+    }
 }

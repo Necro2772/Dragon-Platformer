@@ -50,6 +50,8 @@ public abstract class Loot extends Effect {
         sensorFixture.getFilterData().categoryBits = GameContactListener.FilterBits.SENSOR.getBit();
         sensorFixture.getFilterData().maskBits = GameContactListener.FilterBits.PLAYER.getBit();
         sensorShape.dispose();
+
+        init();
     }
 
     @Override

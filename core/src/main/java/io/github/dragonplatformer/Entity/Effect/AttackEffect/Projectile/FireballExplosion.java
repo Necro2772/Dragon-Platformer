@@ -9,8 +9,8 @@ import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.MeleeAt
 public class FireballExplosion extends MeleeAttack {
 
     public FireballExplosion(Vector2 position, float damage, float knockback, float width, float height, Vector2 offset,
-                             int direction, AnimationManager animationManager, boolean isPlayer, World world) {
-        super(position.x, position.y, damage, knockback, width, height, direction,
+                             AnimationManager animationManager, boolean isPlayer, World world) {
+        super(position.x, position.y, damage, knockback, width, height,
             AnimationKey.EFFECT_EXPLOSION, animationManager, isPlayer, world);
         init(width, height, offset);
     }

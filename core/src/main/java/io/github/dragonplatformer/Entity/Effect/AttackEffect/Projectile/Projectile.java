@@ -14,50 +14,68 @@ public abstract class Projectile extends AttackEffect {
     private float health;
     private float lifetime;
     private final FixtureDef bodyFixtureDef;
-    private final Filter bodyFilter;
-    private final PolygonShape bodyFixtureShape;
+    private FixtureDef damageFixtureDef;
+    private Shape bodyFixtureShape;
     private boolean destroyOnStatic;
     private boolean destroyOnEnemy;
     private final boolean isPlayer;
 
     public Projectile(float damage, float knockback, float health, float lifetime,
-                      float x, float y, float width, float height, int direction,
+                      float x, float y, float width, float height,
                       AnimationKey animKey, AnimationManager animManager,
                       boolean isPlayer, World world) {
-        super(damage, knockback, x, y, width, height, direction, animKey, animManager, world);
+        super(damage, knockback, x, y, width, height, animKey, animManager, world);
         this.health = health;
         this.lifetime = lifetime;
         this.destroyOnStatic = true;
         this.destroyOnEnemy = true;
         this.isPlayer = isPlayer;
-
-        bodyFixtureShape = new PolygonShape();
-        bodyFixtureShape.setAsBox(width / 2f, height / 2f, new Vector2(), 0);
         bodyFixtureDef = new FixtureDef();
-        bodyFixtureDef.shape = bodyFixtureShape;
-        bodyFilter = new Filter();
-        bodyFilter.categoryBits = GameContactListener.FilterBits.EFFECT.getBit();
-        if (isPlayer) {
-            bodyFilter.maskBits = (short) (GameContactListener.FilterBits.EFFECT.getBit()
-                + GameContactListener.FilterBits.ENEMY.getBit()
-                + GameContactListener.FilterBits.STATIC.getBit());
-            bodyFilter.groupIndex = GameContactListener.FilterGroup.PLAYERATTACK.getBit();
-        } else {
-            bodyFilter.maskBits = (short) (GameContactListener.FilterBits.EFFECT.getBit()
-                + GameContactListener.FilterBits.PLAYER.getBit()
-                + GameContactListener.FilterBits.STATIC.getBit());
-            bodyFilter.groupIndex = GameContactListener.FilterGroup.ENEMYATTACK.getBit();
-        }
+        damageFixtureDef = null;
+        PolygonShape bodyFixtureShape = new PolygonShape();
+        bodyFixtureShape.setAsBox(getWidth() / 2f, getHeight() / 2f, new Vector2(), 0);
     }
 
+    @Override
     public void init() {
+        super.init();
+        if (getTargetPos().x < spawnPos().x) {
+            setSpriteDirection(-1);
+            if (bodyFixtureShape instanceof CircleShape) {
+                ((CircleShape) bodyFixtureShape).setPosition(((CircleShape) bodyFixtureShape).getPosition().scl(-1, 1));
+            }
+        } else {
+            setSpriteDirection(1);
+        }
+
+        bodyFixtureDef.shape = bodyFixtureShape;
+        bodyFixtureDef.filter.categoryBits = GameContactListener.FilterBits.EFFECT.getBit();
+        if (isPlayer) {
+            bodyFixtureDef.filter.maskBits = (short) (GameContactListener.FilterBits.EFFECT.getBit()
+                + GameContactListener.FilterBits.ENEMY.getBit()
+                + GameContactListener.FilterBits.STATIC.getBit());
+            bodyFixtureDef.filter.groupIndex = GameContactListener.FilterGroup.PLAYERATTACK.getBit();
+        } else {
+            bodyFixtureDef.filter.maskBits = (short) (GameContactListener.FilterBits.EFFECT.getBit()
+                + GameContactListener.FilterBits.PLAYER.getBit()
+                + GameContactListener.FilterBits.STATIC.getBit());
+            bodyFixtureDef.filter.groupIndex = GameContactListener.FilterGroup.ENEMYATTACK.getBit();
+        }
+
         bodyFixtureDef.isSensor = destroyOnStatic;
+        if (damageFixtureDef != null) {
+            Fixture damageFixture = getBody().createFixture(damageFixtureDef);
+            damageFixture.setUserData(this);
+        }
         Fixture fixture = getBody().createFixture(bodyFixtureDef);
-        fixture.setFilterData(bodyFilter);
         fixture.setUserData(this);
         bodyFixtureShape.dispose();
+    }
 
-        getBody().setGravityScale(0);
+    public void setCollisionAsCircle(float radius, Vector2 center) {
+        bodyFixtureShape = new CircleShape();
+        bodyFixtureShape.setRadius(radius);
+        ((CircleShape) bodyFixtureShape).setPosition(center);
     }
 
     public void setReflectOnStatic() {
@@ -65,34 +83,28 @@ public abstract class Projectile extends AttackEffect {
     }
 
     public void setPassThroughEnemies() {
-        if (isPlayer) bodyFilter.maskBits -= GameContactListener.FilterBits.ENEMY.getBit();
-        else bodyFilter.maskBits -= GameContactListener.FilterBits.PLAYER.getBit();
+        damageFixtureDef = new FixtureDef();
+        if (isPlayer) bodyFixtureDef.filter.maskBits -= GameContactListener.FilterBits.ENEMY.getBit();
+        else bodyFixtureDef.filter.maskBits -= GameContactListener.FilterBits.PLAYER.getBit();
         FixtureDef damageFixtureDef = new FixtureDef();
         damageFixtureDef.isSensor = true;
         damageFixtureDef.shape = bodyFixtureShape;
-        Filter damageFixtureFilter = new Filter();
-        damageFixtureFilter.categoryBits = GameContactListener.FilterBits.EFFECT.getBit();
-        if (isPlayer) damageFixtureFilter.maskBits = GameContactListener.FilterBits.ENEMY.getBit();
-        else damageFixtureFilter.maskBits = GameContactListener.FilterBits.PLAYER.getBit();
-        damageFixtureFilter.groupIndex = GameContactListener.FilterGroup.PLAYERATTACK.getBit();
-        Fixture damageFixture = getBody().createFixture(damageFixtureDef);
-        damageFixture.setFilterData(damageFixtureFilter);
-        damageFixture.setUserData(this);
-        this.destroyOnEnemy = false;
+        damageFixtureDef.filter.categoryBits = GameContactListener.FilterBits.EFFECT.getBit();
+        if (isPlayer) damageFixtureDef.filter.maskBits = GameContactListener.FilterBits.ENEMY.getBit();
+        else damageFixtureDef.filter.maskBits = GameContactListener.FilterBits.PLAYER.getBit();
+        damageFixtureDef.filter.groupIndex = GameContactListener.FilterGroup.PLAYERATTACK.getBit();
+        destroyOnEnemy = false;
     }
 
     @Override
     public void act(float delta) {
         super.act(delta);
-        if (this.health <= 0 && getState() != EffectState.DESTROYED) {
-            setState(EffectState.DESTROYED);
-            onDestroy();
-        }
         lifetime -= delta;
-        if (lifetime <= 0 && getState() != EffectState.DESTROYED) destroy();
+        if (getState() != EffectState.DESTROYED) {
+            if (health <= 0) setState(EffectState.DESTROYED);
+            else if (lifetime <= 0) destroy();
+        }
     }
-
-    public void onDestroy() { }
 
     @Override
     public void beginContact(Fixture entityFixture, Fixture contactFixture) {

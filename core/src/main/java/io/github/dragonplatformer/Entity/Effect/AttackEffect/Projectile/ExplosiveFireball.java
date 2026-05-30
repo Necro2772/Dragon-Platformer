@@ -11,20 +11,20 @@ public class ExplosiveFireball extends Projectile {
     private final float damage;
     private final float knockback;
 
-    public ExplosiveFireball(float damage, float knockback, float health, float x, float y, float width, float height, int direction,
+    public ExplosiveFireball(float damage, float knockback, float health, float x, float y, float width, float height,
                              AnimationManager animationManager, boolean isPlayer, World world) {
-        super(0, 0, health, 2, x, y, width, height, direction,
+        super(0, 0, health, 2, x, y, width, height,
             AnimationKey.EFFECT_FIREBALL, animationManager, isPlayer, world);
-        init();
         this.animationManager = animationManager;
         this.isPlayer = isPlayer;
         this.damage = damage;
         this.knockback = knockback;
+        init();
     }
 
     @Override
-    public void onDestroy() {
+    public void onHit() {
         new FireballExplosion(getBody().getPosition(), damage, knockback, 6, 6,
-            new Vector2(0, 0), getSpriteDirection(), animationManager, isPlayer, getBody().getWorld());
+            new Vector2(0, 0), animationManager, isPlayer, getBody().getWorld());
     }
 }

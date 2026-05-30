@@ -186,6 +186,10 @@ public abstract class Actor<T extends EntityState> extends Entity<T> {
         if (hitEffectTimer >= 0) hitEffectTimer -= delta;
     }
 
+    public Vector2 getHitboxPosition() {
+        return ((CircleShape) getBody().getFixtureList().get(getHitboxIndex()).getShape()).getPosition();
+    }
+
     @Override
     public void beginContact(Fixture entityFixture, Fixture contactFixture) {
         if (getBody().getFixtureList().indexOf(entityFixture, true) == getJumpSensorIndex()) {
