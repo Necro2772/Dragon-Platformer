@@ -1,11 +1,14 @@
 package io.github.dragonplatformer.Entity;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import io.github.dragonplatformer.GameContactListener;
+import io.github.dragonplatformer.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,10 +32,15 @@ public abstract class Entity<T extends EntityState> {
     private boolean isFloating;
     private final Vector2 spawnPos;
     private Vector2 targetPos;
+    private Vector2 targetVel;
     private float speed;
+    private float startingSpeed;
     private float acceleration;
+    private float turnAcceleration;
     private final Vector2 damping;
     private final StaticBodyRayCast staticRayCast;
+    private float spawnDelay;
+    private boolean enabled;
 
     public Entity(float x, float y, float width, float height, Map<T, Animation<TextureRegion>> anims,
                   Map<T, List<AnimationEvent>> animEvents, AnimationManager animManager, World world) {
@@ -57,10 +65,14 @@ public abstract class Entity<T extends EntityState> {
         setFloating(false);
         spawnPos = new Vector2(x, y);
         targetPos = new Vector2();
+        targetVel = new Vector2();
         setSpeed(5);
+        startingSpeed = speed;
         setAcceleration(30);
-        damping = new Vector2(10, 10);
+        damping = new Vector2(30, 60);
         staticRayCast = new StaticBodyRayCast();
+        spawnDelay = 0;
+        enabled = true;
     }
 
     public Entity(float width, float height, Map<T, Animation<TextureRegion>> anims,
@@ -81,114 +93,168 @@ public abstract class Entity<T extends EntityState> {
         spawnPos = new Vector2(body.getPosition());
         targetPos = new Vector2();
         setSpeed(0);
+        startingSpeed = speed;
         setAcceleration(30);
         damping = new Vector2(10, 10);
         staticRayCast = new StaticBodyRayCast();
+        spawnDelay = 0;
+        enabled = true;
+    }
+
+    public void init() {
+        if (autoMove) setVelFromSpeed(startingSpeed);
+        if (!enabled) getBody().setActive(false);
     }
 
     public void act(float delta) {
-        movementUpdate(delta);
-        stateTime += delta;
-        for(TimedImpulse timedImpulse : timedImpulses) {
-            applyWeightedImpulse(timedImpulse.getImpulse(delta));
-            timedImpulse.update(delta);
+        if (enabled) {
+            movementUpdate(delta);
+            stateTime += delta;
+            for(TimedImpulse timedImpulse : timedImpulses) {
+                applyWeightedImpulse(timedImpulse.getImpulse(delta));
+                timedImpulse.update(delta);
+            }
+            timedImpulses.removeIf(TimedImpulse::isExpired);
+        } else {
+            spawnDelay -= delta;
+            if (spawnDelay <= 0) {
+                enabled = true;
+                getBody().setActive(true);
+            }
         }
-        timedImpulses.removeIf(TimedImpulse::isExpired);
     }
 
     private void movementUpdate(float delta) {
         if (isAutoMove()) {
-            Vector2 direction = new Vector2();
-            switch (getMovementType()) {
-                case IDLE:
-                    direction.set(spawnPos()).sub(getPosition()).nor();
-                    break;
-                case FLEE:
-                    direction.set(getPosition()).sub(getTargetPos()).nor();
-                    float distToWall = 5;
-                    staticRayCast.reset();
-                    getBody().getWorld().rayCast(staticRayCast, getPosition(), new Vector2(direction).scl(distToWall));
-                    if (staticRayCast.result) {
-                        int[] closestAngles = new int[3];
-                        float diamondAngle;
-                        if (direction.y >= 0)
-                                diamondAngle = (direction.x >= 0 ? direction.y/(direction.x+direction.y)
-                                    : 1-direction.x/(-direction.x+direction.y));
-                            else
-                                diamondAngle = (direction.x < 0 ? 2-direction.y/(-direction.x-direction.y)
-                                    : 3+direction.x/(direction.x-direction.y));
-                        closestAngles[0] = Math.round(diamondAngle) % 4;
-                        if (diamondAngle < closestAngles[0]) {
-                            closestAngles[1] = (closestAngles[0] + 3) % 4;
-                            closestAngles[2] = (closestAngles[0] + 1) % 4;
-                        } else {
-                            closestAngles[1] = (closestAngles[0] + 1) % 4;
-                            closestAngles[2] = (closestAngles[0] + 3) % 4;
-                        }
-                        for (int angle : closestAngles) {
-                            staticRayCast.reset();
-                            Vector2 rayCastTarget = getPosition();
-                            switch (angle) {
-                                case 0:
-                                    rayCastTarget.add(distToWall, 0);
-                                    break;
-                                case 1:
-                                    rayCastTarget.add(0, distToWall);
-                                    break;
-                                case 2:
-                                    rayCastTarget.add(-distToWall, 0);
-                                    break;
-                                case 3:
-                                    rayCastTarget.add(0, -distToWall);
-                                    break;
-                            }
-                            getBody().getWorld().rayCast(staticRayCast, getPosition(), rayCastTarget);
-                            if (!staticRayCast.result) {
-                                direction.set(rayCastTarget).sub(getPosition()).scl(1/distToWall);
-                                break;
-                            }
-                        }
-                    }
-                    break;
-                case APPROACH:
-                    direction.set(getTargetPos()).sub(getPosition()).nor();
-                    break;
-                case LINE:
-                    direction.set(getTargetPos()).sub(spawnPos()).nor();
-                    break;
-                case CIRCLE:
-                case CAUTION:
-                    break;
-            }
-
+            Vector2 direction = getMovementDirection();
             if (isFlying()) {
                 if (anims.get(getState()).getKeyFrameIndex(getStateTime()) == 0 &&
                     anims.get(getState()).getKeyFrameIndex(getStateTime() + delta) == 1) {
                     float jumpBoost = 4;
                     if (getBody().getLinearVelocity().y < 0 && direction.y >= 0) {
-                        applyWeightedImpulse(0, -getBody().getLinearVelocity().y * 2);
+                        applyTimedImpulse(0, -getBody().getLinearVelocity().y * 2, 0.2f);
                     }
-
-                    applyClampedImpulse(
+                    applyClampedTimedImpulse(
                         direction.scl(getAcceleration() * anims.get(getState()).getAnimationDuration()),
-                        new Vector2(-getSpeed(), 0), new Vector2(getSpeed(), getSpeed() + jumpBoost)
+                        new Vector2(-getSpeed(), 0), new Vector2(getSpeed(), getSpeed() + jumpBoost), 0.1f
                     );
                 }
+            } else if (isFloating) {
+                applyWeightedForce(
+                    new Vector2(direction).scl(
+                        Math.min(getAcceleration(), speed - getBody().getLinearVelocity().len())
+                    )
+                );
+                int turnDir = 1;
+                if (direction.angleDeg(getBody().getLinearVelocity()) > 180) {
+                    turnDir = -1;
+                }
+                float turnForce = Math.min(180 - Math.abs(direction.angleDeg(getBody().getLinearVelocity()) - 180), 90) / 90;
+                applyTurnForce(turnAcceleration * turnForce, turnDir);
             } else {
-                applyClampedForce(new Vector2(direction).scl(getAcceleration()), new Vector2(-getSpeed(), -getSpeed()),
-                    new Vector2(getSpeed(), getSpeed()));
+                applyClampedForce(direction.scl(getAcceleration()), new Vector2(-speed, -speed),
+                    new Vector2(speed, speed));
             }
         }
 
-        if (getDamping().x != 0 || getDamping().y != 0) {
+        if (damping().x != 0 || damping().y != 0) {
             applyWeightedForce(
-                (getDamping().x / 100 * -getBody().getLinearVelocity().x * Math.abs(getBody().getLinearVelocity().x)),
-                (getDamping().y / 100 * -getBody().getLinearVelocity().y * Math.abs(getBody().getLinearVelocity().y))
+                (damping().x / 100 * -getBody().getLinearVelocity().x * Math.abs(getBody().getLinearVelocity().x)),
+                (damping().y / 100 * -getBody().getLinearVelocity().y * Math.abs(getBody().getLinearVelocity().y))
             );
         }
     }
 
+    private Vector2 getMovementDirection() {
+        Vector2 direction = new Vector2();
+        switch (getMovementType()) {
+            case IDLE:
+                direction.set(spawnPos()).sub(getPosition()).nor();
+                break;
+            case FLEE:
+                direction.set(getPosition()).sub(getTargetPos()).nor();
+                float distToWall = 5;
+                staticRayCast.reset();
+                getBody().getWorld().rayCast(staticRayCast, getPosition(), new Vector2(direction).scl(distToWall));
+                if (staticRayCast.result) {
+                    int[] closestAngles = new int[3];
+                    float diamondAngle;
+                    if (direction.y >= 0)
+                            diamondAngle = (direction.x >= 0 ? direction.y/(direction.x+direction.y)
+                                : 1-direction.x/(-direction.x+direction.y));
+                        else
+                            diamondAngle = (direction.x < 0 ? 2-direction.y/(-direction.x-direction.y)
+                                : 3+direction.x/(direction.x-direction.y));
+                    closestAngles[0] = Math.round(diamondAngle) % 4;
+                    if (diamondAngle < closestAngles[0]) {
+                        closestAngles[1] = (closestAngles[0] + 3) % 4;
+                        closestAngles[2] = (closestAngles[0] + 1) % 4;
+                    } else {
+                        closestAngles[1] = (closestAngles[0] + 1) % 4;
+                        closestAngles[2] = (closestAngles[0] + 3) % 4;
+                    }
+                    for (int angle : closestAngles) {
+                        staticRayCast.reset();
+                        Vector2 rayCastTarget = getPosition();
+                        switch (angle) {
+                            case 0:
+                                rayCastTarget.add(distToWall, 0);
+                                break;
+                            case 1:
+                                rayCastTarget.add(0, distToWall);
+                                break;
+                            case 2:
+                                rayCastTarget.add(-distToWall, 0);
+                                break;
+                            case 3:
+                                rayCastTarget.add(0, -distToWall);
+                                break;
+                        }
+                        getBody().getWorld().rayCast(staticRayCast, getPosition(), rayCastTarget);
+                        if (!staticRayCast.result) {
+                            direction.set(rayCastTarget).sub(getPosition()).scl(1/distToWall);
+                            break;
+                        }
+                    }
+                }
+                break;
+            case APPROACH:
+                direction.set(getTargetPos()).sub(getPosition()).nor();
+                break;
+            case LINE:
+                direction.set(getTargetPos()).sub(spawnPos()).nor();
+                break;
+            case PREDICT_LINE:
+                direction.set(getPredictedTargetPos(targetPos.dst(spawnPos()) / speed));
+                direction.sub(spawnPos()).nor();
+                break;
+            case CIRCLE:
+            case CAUTION:
+                break;
+        }
+        return direction;
+    }
+
+    public void setSpawnDelay(float spawnDelay) {
+        this.enabled = false;
+        this.spawnDelay = spawnDelay;
+    }
+
+    /**
+     * Applies an impulse to set current speed based on calculated movement direction. All variables for movement
+     * calculations must be set before calling this.
+     * @param speed to calculate new velocity from
+     */
+    public void setVelFromSpeed(float speed) {
+        applyWeightedImpulse(getMovementDirection().scl(speed).sub(getBody().getLinearVelocity()));
+    }
+
+    public Vector2 getPredictedTargetPos(float time) {
+        return new Vector2(targetPos).add(new Vector2(targetVel).scl(time));
+    }
+
     public void draw(SpriteBatch batch, float delta) {
+        if (!enabled) return;
         try {
             TextureRegion frame = anims.get(getState()).getKeyFrame(getStateTime());
             batch.draw(frame,
@@ -200,6 +266,17 @@ public abstract class Entity<T extends EntityState> {
             if (getState() == null) System.err.printf("Null state on object [%s]%n", getClass());
             else System.err.printf("Couldn't find animation for state [%s] of object [%s]%n",
                 getState().name(), getClass());
+        }
+    }
+
+    public void debugDraw(Matrix4 projectionMatrix) {
+        if (isAutoMove() && targetPos.x != 0) {
+            Vector2 direction = getMovementDirection();
+            Utils.drawLine(
+                getPosition(),
+                getPosition().add(direction.scl(speed)),
+                2, Color.YELLOW, projectionMatrix
+            );
         }
     }
 
@@ -378,6 +455,20 @@ public abstract class Entity<T extends EntityState> {
         }
     }
 
+    public void applyClampedTimedImpulse(Vector2 impulse, Vector2 minVelocity, Vector2 maxVelocity, float duration) {
+        Vector2 vel = getBody().getLinearVelocity();
+        if (minVelocity == null) minVelocity = new Vector2(Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
+        if (maxVelocity == null) maxVelocity = new Vector2(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
+        if (impulse.x != 0 &&
+            ((vel.x > minVelocity.x && impulse.x < 0) || (vel.x < maxVelocity.x && impulse.x >= 0))) {
+            applyTimedImpulse(Math.min(Math.max(impulse.x, minVelocity.x - vel.x), maxVelocity.x - vel.x), 0, duration);
+        }
+        if (impulse.y != 0 &&
+            ((vel.y > minVelocity.y && impulse.y < 0) || (vel.y < maxVelocity.y && impulse.y >= 0))) {
+            applyTimedImpulse(0, Math.min(Math.max(impulse.y, minVelocity.y - vel.y), maxVelocity.y - vel.y), duration);
+        }
+    }
+
     /**
      * Applies a weighted impulse over a duration.
      * @param x velocity change
@@ -395,6 +486,11 @@ public abstract class Entity<T extends EntityState> {
      */
     public void applyTimedImpulse(Vector2 impulse, float duration) {
         timedImpulses.add(new TimedImpulse(impulse, duration));
+    }
+
+    public void applyTurnForce(float turnAcceleration, int direction) {
+        applyWeightedForce(new Vector2(getBody().getLinearVelocity())
+            .setAngleDeg(getBody().getLinearVelocity().angleDeg() + 90 * direction).setLength(turnAcceleration));
     }
 
     public MovementType getMovementType() {
@@ -442,12 +538,26 @@ public abstract class Entity<T extends EntityState> {
         this.targetPos = target;
     }
 
+    public Vector2 getTargetVel() {
+        return targetVel;
+    }
+
+    public void setTargetVel(Vector2 targetVel) {
+        this.targetVel = targetVel;
+    }
+
     public float getSpeed() {
         return speed;
     }
 
     public void setSpeed(float speed) {
         this.speed = speed;
+        this.startingSpeed = speed;
+    }
+
+    public void setSpeed(float speed, float startingSpeed) {
+        this.speed = speed;
+        this.startingSpeed = startingSpeed;
     }
 
     public float getAcceleration() {
@@ -456,9 +566,15 @@ public abstract class Entity<T extends EntityState> {
 
     public void setAcceleration(float acceleration) {
         this.acceleration = acceleration;
+        this.turnAcceleration = acceleration;
     }
 
-    public Vector2 getDamping() {
+    public void setAcceleration(float acceleration, float turnAcceleration) {
+        this.acceleration = acceleration;
+        this.turnAcceleration = turnAcceleration;
+    }
+
+    public Vector2 damping() {
         return damping;
     }
 

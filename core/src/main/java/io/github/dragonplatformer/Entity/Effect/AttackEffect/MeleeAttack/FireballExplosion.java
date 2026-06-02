@@ -1,10 +1,9 @@
-package io.github.dragonplatformer.Entity.Effect.AttackEffect.Projectile;
+package io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
-import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.MeleeAttack;
 
 public class FireballExplosion extends MeleeAttack {
 

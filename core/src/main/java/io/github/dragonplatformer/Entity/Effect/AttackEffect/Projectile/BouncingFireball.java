@@ -6,17 +6,18 @@ import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.MovementType;
 
-public class Fireball extends Projectile {
-    public Fireball(float damage, float knockback, float health, float x, float y, float diameter,
+public class BouncingFireball extends Projectile {
+    public BouncingFireball(float damage, float knockback, float health, float x, float y, float diameter,
                     Vector2 targetPos, AnimationManager animManager, boolean isPlayer, World world) {
-        super(damage, knockback, health, 1.3f, x, y, diameter, diameter,
+        super(damage, knockback, health, 2f, x, y, diameter, diameter,
             AnimationKey.EFFECT_FIREBALL, animManager, isPlayer, world);
         setCollisionAsCircle(diameter / 2 - 0.1f, new Vector2(0.1f, 0));
+        setReflectOnStatic();
         setTargetPos(new Vector2(targetPos));
         setAutoMove(true);
         setMovementType(MovementType.LINE);
-        setSpeed(10);
-        setAcceleration(100);
+        setSpeed(20);
+        setAcceleration(0);
         init();
     }
 }

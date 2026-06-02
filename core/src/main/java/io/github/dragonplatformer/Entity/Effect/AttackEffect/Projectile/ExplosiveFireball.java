@@ -1,9 +1,11 @@
 package io.github.dragonplatformer.Entity.Effect.AttackEffect.Projectile;
 
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
+import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.FireballExplosion;
 
 public class ExplosiveFireball extends Projectile {
     private final AnimationManager animationManager;
@@ -23,8 +25,9 @@ public class ExplosiveFireball extends Projectile {
     }
 
     @Override
-    public void onHit() {
+    public boolean hit(Fixture contactFixture) {
         new FireballExplosion(getBody().getPosition(), damage, knockback, 6, 6,
             new Vector2(0, 0), animationManager, isPlayer, getBody().getWorld());
+        return super.hit(contactFixture);
     }
 }

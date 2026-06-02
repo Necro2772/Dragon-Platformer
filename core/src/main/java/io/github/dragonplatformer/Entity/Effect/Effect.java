@@ -22,11 +22,13 @@ public abstract class Effect extends Entity<EffectState> {
         setDisjointFixture(false);
     }
 
+    @Override
     public void init() {
+        super.init();
         setState(EffectState.IDLE);
         if (!isDisjointFixture()) {
             setFloating(true);
-            getDamping().set(0, 0);
+            damping().set(0, 0);
         }
     }
 

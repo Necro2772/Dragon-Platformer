@@ -25,6 +25,13 @@ public class EnemyStats extends ActorStats {
     private float minDst2;
     private float maxDst2;
 
+    // Movement stats
+    protected float walkSpeed = 3;
+    protected float runSpeed = 5;
+    protected float acceleration = 30;
+    protected float flyDampingX = 30;
+    protected float flyDampingY = 60;
+
     protected EnemyStats() {
         super();
         activeAttackEffects = new ArrayList<>();

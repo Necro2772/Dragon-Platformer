@@ -20,7 +20,6 @@ public enum PlayerState implements EntityState {
     ATTACK_UP(FLYING),
     ATTACK_DOWN(FLYING),
     ATTACK_GLIDE(GLIDE),
-    ATTACK_GLIDE_HIT(GLIDE),
     ATTACK_SOAR(SOAR),
     ATTACK_DIVE(FLYING),
     ATTACK_DIVE_LAND(IDLE),

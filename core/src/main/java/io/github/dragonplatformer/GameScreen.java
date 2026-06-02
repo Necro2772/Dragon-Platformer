@@ -34,7 +34,6 @@ import java.util.ArrayList;
 
 public class GameScreen implements Screen {
     private final Main game;
-
     private final Stage uiStage;
     private final World world;
     private final Box2DDebugRenderer debugRenderer;
@@ -46,10 +45,13 @@ public class GameScreen implements Screen {
     private final Array<AttackEffect> effects;
     private final Array<Actor<?>> hitBodies;
     private final Array<Actor<?>> invulBodies;
+    private final Array<Actor<?>> counterBodies;
     private final AnimationManager animManager;
     private final ShaderProgram hitShader;
+    private final ShaderProgram invulnerableShader;
+    private final ShaderProgram counterShader;
 //    private float shaderTimer;
-//    private boolean debug;
+    private boolean debug;
     private final ArrayList<CameraArea> cameraAreas;
     private int currentCameraArea;
     private CameraArea cameraInterpolationArea;
@@ -62,9 +64,10 @@ public class GameScreen implements Screen {
         bodies = new Array<>();
         hitBodies = new Array<>();
         invulBodies = new Array<>();
+        counterBodies = new Array<>();
         effects = new Array<>();
         world = new World(new Vector2(0, -9.8f), true);
-//        debug = false;
+        debug = false;
 //        shaderTimer = 0;
         cameraAreas = new ArrayList<>();
         cameraInterpolationArea = null;
@@ -78,6 +81,8 @@ public class GameScreen implements Screen {
             debugInfo = null;
             player = new Player(0, 0, world, this, animManager);
             hitShader = null;
+            invulnerableShader = null;
+            counterShader = null;
             return;
         }
 
@@ -103,6 +108,54 @@ public class GameScreen implements Screen {
                     "gl_FragColor = vec4(1, 1, 1, 1);\n" +
                 "}\n" +
             "}"
+        );
+
+        invulnerableShader = new ShaderProgram(
+            "attribute highp vec4 a_position;\n" +
+                "attribute highp vec4 a_color;\n" +
+                "attribute highp vec2 a_texCoord0;\n" +
+                "uniform mat4 u_projTrans;\n" +
+                "varying highp vec4 v_color;\n" +
+                "varying highp vec2 v_texCoords;\n" +
+                "void main() {\n" +
+                "v_color = a_color;\n" +
+                "v_texCoords = a_texCoord0;\n" +
+                "gl_Position = u_projTrans * a_position;\n" +
+                "}",
+            "varying highp vec4 v_color;\n" +
+                "varying highp vec2 v_texCoords;\n" +
+                "uniform sampler2D u_texture;\n" +
+                "void main() {\n" +
+                "gl_FragColor = vec4(0.0);\n" +
+                "highp vec4 color = texture2D(u_texture, v_texCoords);\n" +
+                "if (color.a > 0.0) {\n" +
+                "gl_FragColor = vec4(color.r + 0.2, color.g + 0.2, color.b + 0.2, color.a);\n" +
+                "}\n" +
+                "}"
+        );
+
+        counterShader = new ShaderProgram(
+            "attribute highp vec4 a_position;\n" +
+                "attribute highp vec4 a_color;\n" +
+                "attribute highp vec2 a_texCoord0;\n" +
+                "uniform mat4 u_projTrans;\n" +
+                "varying highp vec4 v_color;\n" +
+                "varying highp vec2 v_texCoords;\n" +
+                "void main() {\n" +
+                "v_color = a_color;\n" +
+                "v_texCoords = a_texCoord0;\n" +
+                "gl_Position = u_projTrans * a_position;\n" +
+                "}",
+            "varying highp vec4 v_color;\n" +
+                "varying highp vec2 v_texCoords;\n" +
+                "uniform sampler2D u_texture;\n" +
+                "void main() {\n" +
+                "gl_FragColor = vec4(0.0);\n" +
+                "highp vec4 color = texture2D(u_texture, v_texCoords);\n" +
+                "if (color.a > 0.0) {\n" +
+                "gl_FragColor = vec4(color.r - 0.2, color.g + 0.0, color.b + 0.4, color.a);\n" +
+                "}\n" +
+                "}"
         );
         uiStage = new Stage(new ScreenViewport());
         debugRenderer = new Box2DDebugRenderer();
@@ -335,6 +388,7 @@ public class GameScreen implements Screen {
         effects.clear();
         hitBodies.clear();
         invulBodies.clear();
+        counterBodies.clear();
         game.batch.begin();
         for (Body body : bodies) {
             for (Fixture fixture : body.getFixtureList()) {
@@ -347,8 +401,9 @@ public class GameScreen implements Screen {
                 if (e instanceof AttackEffect) effects.add((AttackEffect) e);
                 else if (e instanceof Actor) {
                     Actor<?> c = (Actor<?>) e;
-                    if (c.getHitFlash()) hitBodies.add(c);
-                    else if (c.stats().getInvulnerable()) invulBodies.add(c);
+                    if (c instanceof Player && ((Player) e).stats().isEvading()) counterBodies.add(c);
+                    else if (c.getHitFlash()) hitBodies.add(c);
+                    else if (c.stats().isInvulnerable()) invulBodies.add(c);
                     else c.draw(game.batch, delta);
                 }
                 else e.draw(game.batch, delta);
@@ -364,25 +419,43 @@ public class GameScreen implements Screen {
             if (actor.getHitEffectTimer() <= 0.1f) actor.draw(game.batch, delta);
         }
 
+        game.batch.setShader(counterShader);
+        for (Actor<?> actor : counterBodies) {
+            actor.draw(game.batch, delta);
+        }
 //        shaderTimer += delta;
 //        shaderTimer %= 0.7f;
         //if (shaderTimer < 0.1f) game.batch.setColor(new Color(0.3f, 0.3f, 0.3f, 0));
         //else
-            game.batch.setColor(new Color(0.6f, 0.6f, 0.6f, 1f));
+        //game.batch.setColor(new Color(0.6f, 0.6f, 0.6f, 1f));
+        game.batch.setShader(invulnerableShader);
+        game.batch.setColor(Color.WHITE);
         for (Actor<?> actor : invulBodies) {
             actor.draw(game.batch, delta);
         }
-        game.batch.setColor(Color.WHITE);
+        game.batch.setShader(null);
         for (AttackEffect effect : effects) {
             effect.draw(game.batch, delta);
         }
         game.batch.end();
 
+        if (debug) {
+            for (Body body : bodies) {
+                for (Fixture fixture : body.getFixtureList()) {
+                    if (fixture.getUserData() != body.getUserData() && fixture.getUserData() != null) {
+                        ((Entity<?>) fixture.getUserData()).debugDraw(game.viewport.getCamera().combined);
+                    }
+                }
+                if (body.getUserData() != null) {
+                    ((Entity<?>) body.getUserData()).debugDraw(game.viewport.getCamera().combined);
+                }
+            }
+        }
+
         uiStage.act(delta);
         debugInfo.setText(String.format(
             "%n%nPlayer State: %s%n" +
                 "State Time: %.2f%n" +
-                "Jumps: %d%n" +
                 "Health: %.1f%n" +
                 "Crystals: %d%n" +
                 "Glide Charge: %.2f%n" +
@@ -391,8 +464,8 @@ public class GameScreen implements Screen {
                 "Evade Window: %s%n" +
                 "Intangible: %s%n" +
                 "VelX: %.2f%n" +
-                "VelY: %.2f",
-            player.getState(), player.getStateTime(), player.input().numJumps,
+                "VelY: %.2f%n",
+            player.getState(), player.getStateTime(),
             player.stats().getHealth(), player.stats().getCrystals(), player.stats().getGlideCharge(),
             player.stats().getSoarCharge(), player.input().glide, player.stats().isEvading(), player.stats().isIntangible(),
             player.getBody().getLinearVelocity().x, player.getBody().getLinearVelocity().y
@@ -431,8 +504,10 @@ public class GameScreen implements Screen {
     }
 
     public void setDebug(boolean debug) {
-//        this.debug = debug;
-        if (debug) debugRenderer.setDrawBodies(!debugRenderer.isDrawBodies());
+        if (debug) {
+            debugRenderer.setDrawBodies(!debugRenderer.isDrawBodies());
+            this.debug = !this.debug;
+        }
     }
 
     public Player getPlayer() {

@@ -6,31 +6,29 @@ import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.Claw;
 
-public class Wyvern extends Enemy {
+public class WyvernTanky extends Enemy {
     private final float idleWait;
-    private float idleWaitCurrent;
     private final float attackWait;
     private final Vector2 attackTarget;
 
-    public Wyvern(float x, float y, World world, AnimationManager animManager) {
-        super(x, y, 2, 2, world, animManager, AnimationKey.ENEMY_MANTICORE);
-        setPlayerSensorShape(new Vector2(15, 20), new Vector2(0, 0));
+    public WyvernTanky(float x, float y, World world, AnimationManager animManager) {
+        super(x, y, 3, 3, world, animManager, AnimationKey.ENEMY_MANTICORE);
+        setPlayerSensorShape(new Vector2(10, 15), new Vector2(0, 0));
         init();
-        stats().setMaxHealth(3);
+        stats().setMaxHealth(5);
         stats().setCrystalLoot(2);
-        stats().setAggroRange(50);
-        stats().setMinDst2(4);
+        stats().setAggroRange(30);
+        stats().setMinDst2(0);
         stats().setMaxDst2(25);
-        stats().setDisperseForce(30);
-        setDisperseDist(6);
-        stats().walkSpeed = 3;
-        stats().runSpeed = 5;
+        stats().setDisperseForce(80);
+        setDisperseDist(8);
+        stats().walkSpeed = 1;
+        stats().runSpeed = 2;
 
         setFlying(true);
 
         idleWait = 2f;
-        idleWaitCurrent = idleWait;
-        attackWait = 0.55f;
+        attackWait = 0.7f;
         attackTarget = new Vector2();
     }
 
@@ -44,12 +42,9 @@ public class Wyvern extends Enemy {
                 setState(EnemyState.FLYIDLE);
                 break;
             case FLYIDLE:
-                if (stats().isPlayerInRange() && getPosition().dst2(stats().getPlayerPos()) < 25) {
-                    idleWaitCurrent -= delta;
-                    if (idleWaitCurrent <= 0) {
-                        idleWaitCurrent = idleWait;
-                        setState(EnemyState.FLYCHARGESHOOTPROJECTILE);
-                    }
+                if (getStateTime() > idleWait && stats().isPlayerInRange()
+                    && getPosition().dst2(stats().getPlayerPos()) < 25) {
+                    setState(EnemyState.FLYCHARGESHOOTPROJECTILE);
                 }
                 break;
             case FLYCHARGESHOOTPROJECTILE:
@@ -74,8 +69,8 @@ public class Wyvern extends Enemy {
                 break;
             case FLYSHOOTPROJECTILE:
                 stats().incrementComboCount();
-                new Claw(1, 1, 3,
-                    new Vector2(attackTarget).sub(getPosition()).setLength(2), animManager, getBody());
+                new Claw(1, 1, 4,
+                    new Vector2(attackTarget).sub(getPosition()).setLength(3), animManager, getBody());
                 break;
         }
     }

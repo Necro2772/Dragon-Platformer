@@ -12,7 +12,7 @@ public class ActorStats {
 
     public ActorStats() {
         setMaxHealth(1);
-        setInvulnerability(0);
+        setInvulnerable(0);
         hitMap = new HashMap<>();
         setIntangible(false);
     }
@@ -26,7 +26,7 @@ public class ActorStats {
     }
 
     public void update(float delta) {
-        if (getInvulnerable()) setInvulnerability(invulnerability - delta);
+        if (isInvulnerable()) setInvulnerable(invulnerability - delta);
         for (int group : hitMap.keySet()) {
             if (hitMap.get(group) - delta < 0) hitMap.remove(group);
             else hitMap.replace(group, hitMap.get(group) - delta);
@@ -50,12 +50,12 @@ public class ActorStats {
         this.health = Math.min(health, getMaxHealth());
     }
 
-    public void setInvulnerability(float time) {
+    public void setInvulnerable(float time) {
         this.invulnerability = time;
     }
 
-    public boolean getInvulnerable() {
-        return this.invulnerability > 0;
+    public boolean isInvulnerable() {
+        return this.invulnerability > 0 || isIntangible();
     }
 
     public void setIntangible(boolean intangible) {

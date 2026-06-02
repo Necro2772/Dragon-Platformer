@@ -130,18 +130,24 @@ public abstract class Enemy extends Actor<EnemyState> {
     }
 
     private void updateMovementType() {
+        damping().set(stats().flyDampingX, stats().flyDampingY);
         if (stats().isPlayerSighted()) {
             getTargetPos().set(stats().getPlayerPos());
             float dst2 = stats().getPlayerPos().dst2(getPosition());
             if (dst2 < stats().getMinDst2()) {
                 setMovementType(MovementType.FLEE);
+                setSpeed(stats().runSpeed);
+                setAcceleration(stats().acceleration);
             } else if (dst2 < stats().getMaxDst2()) {
                 setMovementType(MovementType.CAUTION);
+                setSpeed(stats().walkSpeed);
             } else {
                 setMovementType(MovementType.APPROACH);
+                setSpeed(stats().runSpeed);
             }
         } else {
             setMovementType(MovementType.IDLE);
+            setSpeed(stats().walkSpeed);
         }
     }
 
@@ -187,8 +193,8 @@ public abstract class Enemy extends Actor<EnemyState> {
     }
 
     @Override
-    public boolean damage(float attackDamage, Vector2 attackOrigin, float knockback) {
-        if (super.damage(attackDamage, attackOrigin, knockback)) {
+    public boolean damage(float attackDamage, Vector2 attackOrigin, float knockback, Fixture entityFixture) {
+        if (super.damage(attackDamage, attackOrigin, knockback, entityFixture)) {
             if (stats().isStunOnHit()) stats().setHitTimer(1f);
             return true;
         }

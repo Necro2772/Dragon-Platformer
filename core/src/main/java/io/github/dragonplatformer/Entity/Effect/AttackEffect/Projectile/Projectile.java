@@ -16,18 +16,20 @@ public abstract class Projectile extends AttackEffect {
     private final FixtureDef bodyFixtureDef;
     private FixtureDef damageFixtureDef;
     private Shape bodyFixtureShape;
+    private boolean reflectOnStatic;
     private boolean destroyOnStatic;
+    private float restitution;
     private boolean destroyOnEnemy;
     private final boolean isPlayer;
 
-    public Projectile(float damage, float knockback, float health, float lifetime,
-                      float x, float y, float width, float height,
-                      AnimationKey animKey, AnimationManager animManager,
+    public Projectile(float damage, float knockback, float health, float lifetime, float x, float y,
+                      float width, float height, AnimationKey animKey, AnimationManager animManager,
                       boolean isPlayer, World world) {
         super(damage, knockback, x, y, width, height, animKey, animManager, world);
         this.health = health;
         this.lifetime = lifetime;
         this.destroyOnStatic = true;
+        this.reflectOnStatic = false;
         this.destroyOnEnemy = true;
         this.isPlayer = isPlayer;
         bodyFixtureDef = new FixtureDef();
@@ -52,15 +54,21 @@ public abstract class Projectile extends AttackEffect {
         bodyFixtureDef.filter.categoryBits = GameContactListener.FilterBits.EFFECT.getBit();
         if (isPlayer) {
             bodyFixtureDef.filter.maskBits = (short) (GameContactListener.FilterBits.EFFECT.getBit()
-                + GameContactListener.FilterBits.ENEMY.getBit()
-                + GameContactListener.FilterBits.STATIC.getBit());
+                + GameContactListener.FilterBits.ENEMY.getBit());
             bodyFixtureDef.filter.groupIndex = GameContactListener.FilterGroup.PLAYERATTACK.getBit();
         } else {
             bodyFixtureDef.filter.maskBits = (short) (GameContactListener.FilterBits.EFFECT.getBit()
-                + GameContactListener.FilterBits.PLAYER.getBit()
-                + GameContactListener.FilterBits.STATIC.getBit());
+                + GameContactListener.FilterBits.PLAYER.getBit());
             bodyFixtureDef.filter.groupIndex = GameContactListener.FilterGroup.ENEMYATTACK.getBit();
         }
+
+        if (reflectOnStatic || destroyOnStatic) {
+            bodyFixtureDef.filter.maskBits += GameContactListener.FilterBits.STATIC.getBit();
+            if (reflectOnStatic) {
+                bodyFixtureDef.restitution = restitution;
+            }
+        }
+
 
         bodyFixtureDef.isSensor = destroyOnStatic;
         if (damageFixtureDef != null) {
@@ -80,6 +88,19 @@ public abstract class Projectile extends AttackEffect {
 
     public void setReflectOnStatic() {
         this.destroyOnStatic = false;
+        this.reflectOnStatic = true;
+        this.restitution = 1;
+    }
+
+    public void setReflectOnStatic(float restitution) {
+        this.destroyOnStatic = false;
+        this.reflectOnStatic = true;
+        this.restitution = restitution;
+    }
+
+    public void setPassThroughStatic() {
+        this.destroyOnStatic = false;
+        this.reflectOnStatic = false;
     }
 
     public void setPassThroughEnemies() {
@@ -102,20 +123,22 @@ public abstract class Projectile extends AttackEffect {
         lifetime -= delta;
         if (getState() != EffectState.DESTROYED) {
             if (health <= 0) setState(EffectState.DESTROYED);
-            else if (lifetime <= 0) destroy();
+            else if (lifetime <= 0) {
+                onExpire();
+                destroy();
+            }
         }
     }
 
+    public void onExpire() {
+
+    }
+
     @Override
-    public void beginContact(Fixture entityFixture, Fixture contactFixture) {
-        super.beginContact(entityFixture, contactFixture);
+    public boolean hit(Fixture contactFixture) {
+        boolean result = super.hit(contactFixture);
         if (contactFixture.getUserData() instanceof Actor) {
-            Actor<?> actor = ((Actor<?>) contactFixture.getBody().getUserData());
-            if (!actor.stats().getHitGroupInvul(getHitGroup())) {
-                actor.damage(getDamage(), getBody().getPosition(), getKnockback());
-                actor.stats().addHitGroupInvul(getHitGroup(), getHitGroupCD());
-            }
-            if (destroyOnEnemy && !actor.stats().isIntangible()) this.health = 0;
+            if (result) this.health = 0;
         } else if (contactFixture.getUserData() instanceof Projectile) {
             Projectile collideProjectile = (Projectile) contactFixture.getUserData();
             float damage = collideProjectile.health;
@@ -127,6 +150,7 @@ public abstract class Projectile extends AttackEffect {
         } else {
             if (destroyOnStatic) this.health = 0;
         }
+        return result;
     }
 
     public void setHealth(float health) {
@@ -135,5 +159,9 @@ public abstract class Projectile extends AttackEffect {
 
     public float getHealth() {
         return health;
+    }
+
+    public boolean getIsPlayer() {
+        return isPlayer;
     }
 }

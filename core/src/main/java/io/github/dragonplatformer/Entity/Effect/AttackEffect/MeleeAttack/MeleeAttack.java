@@ -1,19 +1,25 @@
 package io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack;
 
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
-import io.github.dragonplatformer.Entity.Actor.Actor;
 import io.github.dragonplatformer.Entity.Actor.Player.Player;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.AttackEffect;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.EnemyDeathVisual;
 import io.github.dragonplatformer.GameContactListener;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class MeleeAttack extends AttackEffect {
     private Fixture attackFixture;
     private final boolean isPlayer;
     private final AnimationManager animManager;
+    private boolean enabled;
+    private float spawnDelay;
+    private final List<Fixture> bufferedContacts;
 
     /** Creates a new attack hitbox attached to the given body. Does not create the fixture until init() is called.
      *
@@ -30,6 +36,9 @@ public abstract class MeleeAttack extends AttackEffect {
         setDisjointFixture(true);
         this.isPlayer = body.getUserData() instanceof Player;
         this.animManager = animManager;
+        this.enabled = true;
+        this.spawnDelay = 0;
+        bufferedContacts = new ArrayList<>();
     }
 
 
@@ -50,6 +59,9 @@ public abstract class MeleeAttack extends AttackEffect {
         super(damage, knockback, x, y, width, height, animKey, animManager, world);
         this.isPlayer = isPlayer;
         this.animManager = animManager;
+        this.enabled = true;
+        this.spawnDelay = 0;
+        bufferedContacts = new ArrayList<>();
     }
 
     /** Initializes the fixture using a rectangle with the given width and height.
@@ -66,12 +78,26 @@ public abstract class MeleeAttack extends AttackEffect {
         fixtureShape.dispose();
     }
 
+    /** Initializes the fixture using a circle with the given radius and center.
+     *
+     * @param radius radius of the fixture in world units.
+     * @param offset center of the circle relative to its body in world units.
+     */
+    public void init(float radius, Vector2 offset) {
+        super.init();
+        CircleShape attackFixtureShape = new CircleShape();
+        attackFixtureShape.setRadius(radius);
+        attackFixtureShape.setPosition(offset);
+        init(attackFixtureShape, offset);
+        attackFixtureShape.dispose();
+    }
+
     /** Initializes the fixture using the given shape. Remember to destroy the shape, it is not needed after use.
      *
      * @param shape fixture shape for the attack hitbox.
      * @param offset center of the rectangle relative to its body in world units.
      */
-    public void init(Shape shape, Vector2 offset) {
+    private void init(Shape shape, Vector2 offset) {
         super.init();
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.isSensor = true;
@@ -83,8 +109,7 @@ public abstract class MeleeAttack extends AttackEffect {
                 + GameContactListener.FilterBits.STATIC.getBit()
                 + GameContactListener.FilterBits.ENEMY.getBit());
             filter.groupIndex = GameContactListener.FilterGroup.PLAYERATTACK.getBit();
-        }
-        else {
+        } else {
             filter.maskBits = (short)(GameContactListener.FilterBits.EFFECT.getBit()
                 + GameContactListener.FilterBits.STATIC.getBit()
                 + GameContactListener.FilterBits.PLAYER.getBit());
@@ -98,31 +123,56 @@ public abstract class MeleeAttack extends AttackEffect {
     }
 
     @Override
-    public void onHit() {
-        super.onHit();
-        new EnemyDeathVisual(getBody().getPosition().x + getPositionOffset().x,
-            getBody().getPosition().y + getPositionOffset().y, animManager, getBody().getWorld());
-    }
-
-    @Override
     public void destroy() {
         if (!isDisjointFixture()) super.destroy();
         else getBody().destroyFixture(this.attackFixture);
     }
 
     @Override
-    public void beginContact(Fixture entityFixture, Fixture contactFixture) {
-        super.beginContact(entityFixture, contactFixture);
-        if (contactFixture.getBody().getUserData() instanceof Actor) {
-            Actor<?> actor = ((Actor<?>) contactFixture.getBody().getUserData());
-            if (!actor.stats().getHitGroupInvul(getHitGroup())){
-                actor.damage(getDamage(), getBody().getPosition(), getKnockback());
-                actor.stats().addHitGroupInvul(getHitGroup(), getHitGroupCD());
-            }
-        }
+    public boolean hit(Fixture contactFixture) {
+        new EnemyDeathVisual(getBody().getPosition().x + getPositionOffset().x,
+            getBody().getPosition().y + getPositionOffset().y, animManager, getBody().getWorld());
         if (getBody().getUserData() instanceof Player) {
             Player player = ((Player) getBody().getUserData());
             player.input().incrementMeleeHit();
         }
+        return super.hit(contactFixture);
+    }
+
+    @Override
+    public void setSpawnDelay(float spawnDelay) {
+        this.spawnDelay = spawnDelay;
+        this.enabled = false;
+    }
+
+    @Override
+    public void act(float delta) {
+        if (this.enabled) super.act(delta);
+        else {
+            spawnDelay -= delta;
+            if (spawnDelay <= 0) {
+                this.enabled = true;
+                for (Fixture contactFixture : bufferedContacts) {
+                    beginContact(attackFixture, contactFixture);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void beginContact(Fixture entityFixture, Fixture contactFixture) {
+        if (enabled) super.beginContact(entityFixture, contactFixture);
+        else bufferedContacts.add(contactFixture);
+    }
+
+    @Override
+    public void endContact(Fixture entityFixture, Fixture contactFixture) {
+        if (enabled) super.endContact(entityFixture, contactFixture);
+        else bufferedContacts.remove(contactFixture);
+    }
+
+    @Override
+    public void draw(SpriteBatch batch, float delta) {
+        if (enabled) super.draw(batch, delta);
     }
 }

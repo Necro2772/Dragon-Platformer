@@ -8,8 +8,15 @@ import io.github.dragonplatformer.Entity.AnimationManager;
 public class Claw extends MeleeAttack {
     public Claw(float damage, float knockback, float width, float height, Vector2 offset,
                 AnimationManager animManager, Body body) {
-        super(damage, knockback, width, height, AnimationKey.EFFECT_CLAWSWIPE,
+        super(damage, knockback, width * 2, height * 1.2f, AnimationKey.EFFECT_CLAWSWIPE,
             animManager, body);
         init(width, height, offset);
+    }
+
+    public Claw(float damage, float knockback, float diameter, Vector2 offset,
+                AnimationManager animManager, Body body) {
+        super(damage, knockback, diameter * 1.2f, diameter * 1.2f, AnimationKey.EFFECT_CLAWSWIPE,
+            animManager, body);
+        init(diameter / 2, offset);
     }
 }

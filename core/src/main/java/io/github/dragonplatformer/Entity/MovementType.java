@@ -6,5 +6,6 @@ public enum MovementType {
     CAUTION,
     APPROACH,
     LINE,
+    PREDICT_LINE,
     CIRCLE
 }

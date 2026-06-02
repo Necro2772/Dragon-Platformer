@@ -2,26 +2,36 @@ package io.github.dragonplatformer.Entity.Effect.AttackEffect;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import io.github.dragonplatformer.Entity.Actor.Actor;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.Effect.Effect;
 import io.github.dragonplatformer.Entity.Effect.EffectState;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public abstract class AttackEffect extends Effect {
-    protected boolean useHitEffect;
-    protected int hitCount;
     private float rotation;
     private Vector2 positionOffset;
     private final float damage;
     private final float knockback;
     private float hitCD;
     private int hitGroup;
+    private float hitTimer;
+    private final Map<Fixture, Float> hitFixtures;
 
     public AttackEffect(float damage, float knockback, float x, float y, float width, float height,
                         AnimationKey animKey, AnimationManager animManager, World world) {
         super(x, y, width, height, animKey, animManager, world);
         this.knockback = knockback;
         this.damage = damage;
+        rotation = 0;
+        positionOffset = new Vector2();
+        hitCD = -1;
+        hitGroup = -1;
+        setHitTimer(Float.POSITIVE_INFINITY);
+        hitFixtures = new HashMap<>();
     }
 
     public AttackEffect(float damage, float knockback, float width, float height,
@@ -29,16 +39,17 @@ public abstract class AttackEffect extends Effect {
         super(width, height, animKey, animManager, body);
         this.knockback = knockback;
         this.damage = damage;
+        rotation = 0;
+        positionOffset = new Vector2();
+        hitCD = -1;
+        hitGroup = -1;
+        setHitTimer(Float.POSITIVE_INFINITY);
+        hitFixtures = new HashMap<>();
     }
 
     @Override
     public void init() {
         super.init();
-        useHitEffect = false;
-        rotation = 0;
-        positionOffset = new Vector2();
-        hitCD = -1;
-        hitGroup = -1;
     }
 
     public void setHitCD(float hitCD) {
@@ -60,10 +71,15 @@ public abstract class AttackEffect extends Effect {
     @Override
     public void act(float delta) {
         super.act(delta);
-        if (useHitEffect) {
-            onHit();
-            useHitEffect = false;
-        }
+        hitFixtures.replaceAll((fixture, timer) -> timer - delta);
+        hitFixtures.forEach((fixture, timer) -> {
+            if (timer - delta <= 0) {
+                hit(fixture);
+                if (hitTimer > 0) hitFixtures.replace(fixture, hitTimer);
+            } else {
+                hitFixtures.replace(fixture, timer - delta);
+            }
+        });
     }
 
     public void setPositionOffset(Vector2 posOffset) {
@@ -79,17 +95,14 @@ public abstract class AttackEffect extends Effect {
         return super.getPosition().add(getPositionOffset());
     }
 
-    public void onHit() { }
-
     @Override
     public void beginContact(Fixture entityFixture, Fixture contactFixture) {
-        hitCount++;
-        if (hitCount == 1) useHitEffect = true;
+        hitFixtures.put(contactFixture, 0f);
     }
 
     @Override
     public void endContact(Fixture entityFixture, Fixture contactFixture) {
-
+        hitFixtures.remove(contactFixture);
     }
 
     @Override
@@ -99,6 +112,19 @@ public abstract class AttackEffect extends Effect {
             setRotation(0);
             if (getBody().getUserData() == this) getBody().setActive(false);
         }
+    }
+
+    public boolean hit(Fixture contactFixture) {
+        if (contactFixture.getBody().getUserData() instanceof Actor) {
+            Actor<?> actor = ((Actor<?>) contactFixture.getBody().getUserData());
+            if (!actor.stats().getHitGroupInvul(getHitGroup())) {
+                if (actor.damage(getDamage(), getPosition(), getKnockback(), contactFixture)) {
+                    actor.stats().addHitGroupInvul(getHitGroup(), getHitGroupCD());
+                    return true;
+                } else return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -119,5 +145,9 @@ public abstract class AttackEffect extends Effect {
 
     public float getKnockback() {
         return knockback;
+    }
+
+    public void setHitTimer(float hitTimer) {
+        this.hitTimer = hitTimer;
     }
 }

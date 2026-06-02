@@ -48,7 +48,9 @@ public abstract class Actor<T extends EntityState> extends Entity<T> {
         hitEffectTimer = 0;
     }
 
+    @Override
     public void init() {
+        super.init();
         Shape bodyCollision;
         if (hitboxRadius <= 0) {
             bodyCollision = new PolygonShape();
@@ -156,33 +158,33 @@ public abstract class Actor<T extends EntityState> extends Entity<T> {
     public void act(float delta) {
         super.act(delta);
         stats().update(delta);
-        if (!overlapFixtures.isEmpty()) {
-            Vector2 avgPos = new Vector2(getBody().getPosition());
-            float avgMass = getBody().getMass();
-            for (Fixture fixture : overlapFixtures) {
-                Actor<?> c = (Actor<?>) fixture.getUserData();
-                avgPos.add(fixture.getBody().getPosition()).add(c.getCenter());
-                avgMass += fixture.getBody().getMass();
-            }
-            avgPos.scl(1f / (overlapFixtures.size() + 1));
-            avgMass /= (overlapFixtures.size() + 1);
-            if (getBody().getMass() <= avgMass) {
-                float forceX = 100;
-                float maxVel = 3;
-                if (getCenter().add(getBody().getPosition()).x < avgPos.x
-                    && getBody().getLinearVelocity().x > -maxVel) {
-                    getBody().applyForceToCenter(
-                        (-forceX - getBody().getLinearVelocity().x) * getBody().getMass(), 0,
-                        true
-                    );
-                } else if (getBody().getLinearVelocity().x < maxVel){
-                    getBody().applyForceToCenter(
-                        (forceX - getBody().getLinearVelocity().x) * getBody().getMass(), 0,
-                        true
-                    );
-                }
-            }
-        }
+//        if (!overlapFixtures.isEmpty()) {
+//            Vector2 avgPos = new Vector2(getBody().getPosition());
+//            float avgMass = getBody().getMass();
+//            for (Fixture fixture : overlapFixtures) {
+//                Actor<?> c = (Actor<?>) fixture.getUserData();
+//                avgPos.add(fixture.getBody().getPosition()).add(c.getCenter());
+//                avgMass += fixture.getBody().getMass();
+//            }
+//            avgPos.scl(1f / (overlapFixtures.size() + 1));
+//            avgMass /= (overlapFixtures.size() + 1);
+//            if (getBody().getMass() <= avgMass) {
+//                float forceX = 30;
+//                float maxVel = 3;
+//                if (getCenter().add(getBody().getPosition()).x < avgPos.x
+//                    && getBody().getLinearVelocity().x > -maxVel) {
+//                    getBody().applyForceToCenter(
+//                        (-forceX - getBody().getLinearVelocity().x) * getBody().getMass(), 0,
+//                        true
+//                    );
+//                } else if (getBody().getLinearVelocity().x < maxVel){
+//                    getBody().applyForceToCenter(
+//                        (forceX - getBody().getLinearVelocity().x) * getBody().getMass(), 0,
+//                        true
+//                    );
+//                }
+//            }
+//        }
         if (hitEffectTimer >= 0) hitEffectTimer -= delta;
     }
 
@@ -215,8 +217,8 @@ public abstract class Actor<T extends EntityState> extends Entity<T> {
         return groundContact > 0;
     }
 
-    public boolean damage(float attackDamage, Vector2 attackOrigin, float knockback) {
-        if (!stats().getInvulnerable()) {
+    public boolean damage(float attackDamage, Vector2 attackOrigin, float knockback, Fixture entityFixture) {
+        if (!stats().isInvulnerable()) {
             stats().setHealth(stats().getHealth() - attackDamage);
             getBody().applyLinearImpulse(getBody().getLinearVelocity().scl(-1), getBody().getPosition(), true);
             if (attackOrigin.x - getBody().getPosition().x < 0) {

@@ -65,43 +65,39 @@ public class AnimationManager {
                     atlas.findRegions("dragon_divesoar"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(PlayerState.EVADE, new Animation<>(
-                    1/4f,
+                    0.75f / 2,
                     atlas.findRegions("dragon_dash"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(PlayerState.EVADE_HORIZONTAL, new Animation<>(
-                    1/4f,
+                    0.5f / 2,
                     atlas.findRegions("dragon_dash"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(PlayerState.EVADE_UP, new Animation<>(
-                    1/4f,
+                    0.5f / 2,
                     atlas.findRegions("dragon_dash"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(PlayerState.EVADE_DOWN, new Animation<>(
-                    1/4f,
+                    0.25f,
                     atlas.findRegions("dragon_dive"),
                     Animation.PlayMode.LOOP
                 )), Map.entry(PlayerState.ATTACK_FORWARD1, new Animation<>(
-                    0.25f,
+                    0.35f,
                     atlas.findRegions("dragon_attackforward"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(PlayerState.ATTACK_FORWARD2, new Animation<>(
-                    0.25f,
+                    0.35f,
                     atlas.findRegions("dragon_attackforward2"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(PlayerState.ATTACK_UP, new Animation<>(
-                    0.33f,
+                    0.4f,
                     atlas.findRegions("dragon_attackup"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(PlayerState.ATTACK_DOWN, new Animation<>(
-                    0.33f,
+                    0.4f,
                     atlas.findRegions("dragon_attackdown"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(PlayerState.ATTACK_GLIDE, new Animation<>(
-                    1.0f,
-                    atlas.findRegions("dragon_attackforward3"),
-                    Animation.PlayMode.NORMAL
-                )), Map.entry(PlayerState.ATTACK_GLIDE_HIT, new Animation<>(
-                    0.25f,
+                    0.75f,
                     atlas.findRegions("dragon_attackforward3"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(PlayerState.ATTACK_SOAR, new Animation<>(
@@ -117,11 +113,11 @@ public class AnimationManager {
                     atlas.findRegions("dragon_attackforward3"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(PlayerState.ATTACK_GROUND1, new Animation<>(
-                    0.25f,
+                    0.35f,
                     atlas.findRegions("dragon_attackforward"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(PlayerState.ATTACK_GROUND2, new Animation<>(
-                    0.25f,
+                    0.35f,
                     atlas.findRegions("dragon_attackforward2"),
                     Animation.PlayMode.NORMAL
                 )), Map.entry(PlayerState.DEATH, new Animation<>(
@@ -138,17 +134,17 @@ public class AnimationManager {
         if (playerAnimationEvents.isEmpty()) {
             playerAnimationEvents.putAll(Map.ofEntries(
                 Map.entry(PlayerState.EVADE, Arrays.asList(
-                    new AnimationEvent(0 / 60f, "evadestart"),
-                    new AnimationEvent(15 / 60f, "evadeend")
+                    new AnimationEvent(0f, "evadestart"),
+                    new AnimationEvent(0.4f, "evadeend")
                 )), Map.entry(PlayerState.EVADE_HORIZONTAL, Arrays.asList(
-                    new AnimationEvent(0 / 60f, "invstart"),
-                    new AnimationEvent(15 / 60f, "invend")
+                    new AnimationEvent(0f, "invstart"),
+                    new AnimationEvent(0.2f, "invend")
                 )), Map.entry(PlayerState.EVADE_UP, Arrays.asList(
-                    new AnimationEvent(0 / 60f, "invstart"),
-                    new AnimationEvent(15 / 60f, "invend")
+                    new AnimationEvent(0f, "invstart"),
+                    new AnimationEvent(0.2f, "invend")
                 )), Map.entry(PlayerState.EVADE_DOWN, Arrays.asList(
-                    new AnimationEvent(0 / 60f, "invstart"),
-                    new AnimationEvent(15 / 60f, "invend")
+                    new AnimationEvent(0f, "invstart"),
+                    new AnimationEvent(0.2f, "invend")
                 ))
             ));
         }

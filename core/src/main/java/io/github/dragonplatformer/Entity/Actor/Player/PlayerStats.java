@@ -31,26 +31,32 @@ public class PlayerStats extends ActorStats {
     public float flyAccX = 12;
     public float diveAccX = 48;
     public float diveAccY = -36;
-    public float soarAccY = 72;
+    public float soarAccY = 8;
     public float evadeAccX = 0;
 
     public float glideImpulseX = 4;
-    public float glideImpulseY = 0;
+    public float glideImpulseY = 6;
     public float diveImpulseY = 2;
-    public float soarImpulseY = 2;
+    public float soarImpulseY = 10;
     public float jumpImpulseAir = 10;
     public float jumpImpulseGround = 12;
-    public float evadeImpulse = 40;
-    public float attackGlideImpulseX = 2;
+    public float evadeImpulse = 10;
+
+    public float attackGlideImpulseX = 10;
     public float attackGlideImpulseY = 4;
-    public float recoilAttackGroundX = 2;
+    public float attackVerticalImpulse = 4;
+    public float recoilAttackGroundX = 5;
+    public float recoilAttackGroundY = 0;
     public float recoilAttackGlideX = 10;
     public float recoilAttackGlideY = 10;
     public float recoilAttackDiveY = 5;
     public float recoilAttackSoarY = 5;
 
+    public float groundDampingX = 100;
+    public float flyDampingX = 10;
+    public float flyDampingY = 10;
     public float fallDamping = 20;
-    public float evadeDamping = 30;
+    public float evadeDamping = 0;
     public float evadeDampingSmall = 10;
     public float glideDampingY = 80;
 
