@@ -7,44 +7,35 @@ import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.Effect.Effect;
 import io.github.dragonplatformer.Entity.Effect.EffectState;
+import io.github.dragonplatformer.Entity.EffectManager;
+import io.github.dragonplatformer.Entity.Entity;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public abstract class AttackEffect extends Effect {
-    private float rotation;
-    private Vector2 positionOffset;
     private final float damage;
     private final float knockback;
-    private float hitCD;
-    private int hitGroup;
-    private float hitTimer;
-    private final Map<Fixture, Float> hitFixtures;
+    private float rotation = 0;
+    private Vector2 positionOffset = new Vector2();
+    private float hitCD = -1;
+    private int hitGroup = -1;
+    private float hitTimer = Float.POSITIVE_INFINITY;
+    private final Map<Fixture, Float> hitFixtures = new HashMap<>();
+    private float hitStun = 0.1f;
 
     public AttackEffect(float damage, float knockback, float x, float y, float width, float height,
-                        AnimationKey animKey, AnimationManager animManager, World world) {
-        super(x, y, width, height, animKey, animManager, world);
+                        AnimationKey animKey, EffectManager effectManager, AnimationManager animManager, World world) {
+        super(x, y, width, height, animKey, effectManager, animManager, world);
         this.knockback = knockback;
         this.damage = damage;
-        rotation = 0;
-        positionOffset = new Vector2();
-        hitCD = -1;
-        hitGroup = -1;
-        setHitTimer(Float.POSITIVE_INFINITY);
-        hitFixtures = new HashMap<>();
     }
 
     public AttackEffect(float damage, float knockback, float width, float height,
-                        AnimationKey animKey, AnimationManager animManager, Body body) {
-        super(width, height, animKey, animManager, body);
+                        AnimationKey animKey, EffectManager effectManager, AnimationManager animManager, Body body) {
+        super(width, height, animKey, effectManager, animManager, body);
         this.knockback = knockback;
         this.damage = damage;
-        rotation = 0;
-        positionOffset = new Vector2();
-        hitCD = -1;
-        hitGroup = -1;
-        setHitTimer(Float.POSITIVE_INFINITY);
-        hitFixtures = new HashMap<>();
     }
 
     @Override
@@ -119,6 +110,8 @@ public abstract class AttackEffect extends Effect {
             Actor<?> actor = ((Actor<?>) contactFixture.getBody().getUserData());
             if (!actor.stats().getHitGroupInvul(getHitGroup())) {
                 if (actor.damage(getDamage(), getPosition(), getKnockback(), contactFixture)) {
+                    ((Entity<?>) getBody().getUserData()).setHitStunTimer(getHitStun());
+                    actor.setHitStunTimer(getHitStun());
                     actor.stats().addHitGroupInvul(getHitGroup(), getHitGroupCD());
                     return true;
                 } else return false;
@@ -149,5 +142,13 @@ public abstract class AttackEffect extends Effect {
 
     public void setHitTimer(float hitTimer) {
         this.hitTimer = hitTimer;
+    }
+
+    public float getHitStun() {
+        return hitStun;
+    }
+
+    public void setHitStun(float hitStun) {
+        this.hitStun = hitStun;
     }
 }

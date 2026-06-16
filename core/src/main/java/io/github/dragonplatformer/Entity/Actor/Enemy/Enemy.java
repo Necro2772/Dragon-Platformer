@@ -8,50 +8,41 @@ import io.github.dragonplatformer.Entity.Effect.AttackEffect.EnemyDeathVisual;
 import io.github.dragonplatformer.Entity.Actor.Actor;
 import io.github.dragonplatformer.Entity.Actor.Player.Player;
 import io.github.dragonplatformer.Entity.Effect.Loot.Crystal;
+import io.github.dragonplatformer.Entity.EffectManager;
 import io.github.dragonplatformer.Entity.MovementType;
 import io.github.dragonplatformer.GameContactListener;
 
 import java.util.ArrayList;
 
 public abstract class Enemy extends Actor<EnemyState> {
-    private final PlayerLOSRay losRay;
-    private Vector2 playerSensorSize;
-    private Vector2 playerSensorCenter;
-    private int playerSensorIndex;
+    private final PlayerLOSRay losRay = new PlayerLOSRay();
+    private Vector2 playerSensorSize = new Vector2(15, 10);
+    private Vector2 playerSensorCenter = new Vector2(0, -playerSensorSize.y/2);
+    private int playerSensorIndex = -1;
     private final FixtureDef playerSensorDef;
-    private final ArrayList<Fixture> nearbyEnemies;
-    private float disperseDist;
-    private int nearbyEnemySensorIndex;
+    private final ArrayList<Fixture> nearbyEnemies = new ArrayList<>();
+    private float disperseDist = 5;
+    private int nearbyEnemySensorIndex = -1;
     private final FixtureDef nearbyEnemySensorDef;
 
-    public Enemy(float x, float y, float width, float height, World world,
+    public Enemy(float x, float y, float width, float height, World world, EffectManager effectManager,
                  AnimationManager animManager, AnimationKey animKey) {
         super(x, y, width, height, animManager.getEnemyAnims(animKey), animManager.getEnemyAnimEvents(animKey),
-            animManager, world);
+            effectManager, animManager, world);
         setAsEnemy();
+        this.setStats(new EnemyStats());
 
         playerSensorDef = new FixtureDef();
         playerSensorDef.filter.categoryBits = GameContactListener.FilterBits.SENSOR.getBit();
         playerSensorDef.filter.maskBits = GameContactListener.FilterBits.PLAYER.getBit();
         playerSensorDef.isSensor = true;
-
-        setState(EnemyState.IDLE);
-        losRay = new PlayerLOSRay();
-
-        playerSensorSize = new Vector2(15, 10);
-        playerSensorCenter = new Vector2(0, -playerSensorSize.y/2);
-
-        this.setStats(new EnemyStats());
-        playerSensorIndex = -1;
-        nearbyEnemySensorIndex = -1;
-
-        nearbyEnemies = new ArrayList<>();
         nearbyEnemySensorDef = new FixtureDef();
         nearbyEnemySensorDef.filter.categoryBits = GameContactListener.FilterBits.SENSOR.getBit();
         nearbyEnemySensorDef.filter.maskBits = GameContactListener.FilterBits.NONE.getBit();
         nearbyEnemySensorDef.filter.groupIndex = GameContactListener.FilterGroup.ENEMYDEFAULT.getBit();
         nearbyEnemySensorDef.isSensor = true;
-        setDisperseDist(5);
+        setState(EnemyState.IDLE);
+        damping().set(30, 60);
     }
 
     @Override
@@ -68,8 +59,13 @@ public abstract class Enemy extends Actor<EnemyState> {
         nearbyEnemyShape.setRadius(disperseDist);
         nearbyEnemySensorDef.shape = nearbyEnemyShape;
         Fixture nearbyEnemyFixture = getBody().createFixture(nearbyEnemySensorDef);
+        nearbyEnemyFixture.setUserData(this);
         nearbyEnemySensorIndex = getBody().getFixtureList().indexOf(nearbyEnemyFixture, true);
         nearbyEnemyShape.dispose();
+    }
+
+    public void setNearbyEnemyGroupIndex(short groupIndex) {
+        nearbyEnemySensorDef.filter.groupIndex = groupIndex;
     }
 
     public void setPlayerSensorShape(Vector2 playerSensorSize) {
@@ -119,8 +115,8 @@ public abstract class Enemy extends Actor<EnemyState> {
         }
         if (!nearbyEnemies.isEmpty()) {
             float disperseTotal = 0;
-            float disperseDist2 = (float) Math.pow(disperseDist, 2);
             for (Fixture enemy : nearbyEnemies) {
+                float disperseDist2 = (float) Math.pow(disperseDist + ((Enemy) enemy.getUserData()).disperseDist, 2);
                 disperseTotal += stats().getDisperseForce() *
                     (disperseDist2 - getPosition().dst2(enemy.getBody().getPosition())) / disperseDist2;
             }
@@ -131,13 +127,13 @@ public abstract class Enemy extends Actor<EnemyState> {
 
     private void updateMovementType() {
         damping().set(stats().flyDampingX, stats().flyDampingY);
+        setAcceleration(stats().acceleration);
         if (stats().isPlayerSighted()) {
             getTargetPos().set(stats().getPlayerPos());
             float dst2 = stats().getPlayerPos().dst2(getPosition());
             if (dst2 < stats().getMinDst2()) {
                 setMovementType(MovementType.FLEE);
                 setSpeed(stats().runSpeed);
-                setAcceleration(stats().acceleration);
             } else if (dst2 < stats().getMaxDst2()) {
                 setMovementType(MovementType.CAUTION);
                 setSpeed(stats().walkSpeed);
@@ -183,12 +179,12 @@ public abstract class Enemy extends Actor<EnemyState> {
     public void death() {
         for (int i = 0; i < stats().getCrystalLoot(); i++) {
             Crystal loot = new Crystal(getBody().getPosition().x, getBody().getPosition().y, 1f, 1f,
-                getBody().getWorld(), animManager);
+                getBody().getWorld(), effectManager, animManager);
             float impulse = (float) Math.random() * 10 + 3;
             Vector2 dir = new Vector2((float) (Math.random() * 10 - 5), 3).nor();
             loot.getBody().applyLinearImpulse(dir.scl(impulse), new Vector2(0, 0), true);
         }
-        new EnemyDeathVisual(getBody().getPosition().x, getBody().getPosition().y, animManager, getBody().getWorld());
+        new EnemyDeathVisual(getBody().getPosition().x, getBody().getPosition().y, effectManager, animManager, getBody().getWorld());
         destroy();
     }
 

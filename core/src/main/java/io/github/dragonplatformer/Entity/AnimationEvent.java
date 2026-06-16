@@ -2,9 +2,9 @@ package io.github.dragonplatformer.Entity;
 
 public class AnimationEvent {
     public final float time;
-    public final String event;
+    public final AnimationEventKey event;
 
-    public AnimationEvent(float time, String event) {
+    public AnimationEvent(float time, AnimationEventKey event) {
         this.time = time;
         this.event = event;
     }

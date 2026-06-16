@@ -1,45 +1,33 @@
 package io.github.dragonplatformer.Entity.Actor.Player;
 
+import com.badlogic.gdx.math.Vector2;
+
 public class PlayerInput {
-    public boolean leftMove;
-    public boolean rightMove;
-    public boolean downMove;
-    public boolean upMove;
-    public boolean jump;
-    public boolean guard;
-    public boolean evade;
-    public boolean projectile;
-    public boolean melee;
-    public boolean glide;
-    public boolean evadeDash;
-    public boolean meleeHit;
-    public int meleeHitCount;
-    public int numJumps;
-    public float projectileCharge;
-    public float breathCount;
-    private int direction;
+    public boolean leftMove = false;
+    public boolean rightMove = false;
+    public boolean downMove = false;
+    public boolean upMove = false;
+    public boolean jump = false;
+    public boolean glide = false;
+    public boolean guard = false;
+    public boolean evadeDash = false;
+    public boolean evade = false;
+    public boolean useProjectile = false;
+    public boolean useMelee = false;
+    public boolean meleeHit = false;
+    public int meleeHitCount = 0;
+    public int numJumps = 4;
+    public float projectileCharge = 0;
+    public float breathCount = 0;
+    private int direction = 1;
+    private Vector2 cursor = new Vector2();
 
-    public PlayerInput() {
-        leftMove = false;
-        rightMove = false;
-        downMove = false;
-        upMove = false;
-        jump = false;
-        guard = false;
-        evade = false;
-        projectile = false;
-        glide = false;
-        evadeDash = false;
-
-        numJumps = 4;
-        projectileCharge = 0;
-        breathCount = 0;
-    }
+    public PlayerInput() {}
 
     public void update(float delta) {
-        if (getProjectile()) projectileCharge += delta;
-        if (getProjectile() && breathCount < 10) breathCount += delta; // TODO: redo projectile logic
-        else if (breathCount > 0) breathCount -= delta;
+        if (getUseProjectile()) projectileCharge += delta;
+//        if (getProjectile() && breathCount < 10) breathCount += delta; // TODO: redo projectile logic
+//        else if (breathCount > 0) breathCount -= delta;
     }
 
     public boolean isGliding() {
@@ -103,12 +91,12 @@ public class PlayerInput {
         this.evadeDash = evadeDash;
     }
 
-    public void setProjectile(boolean isProjectileInput) {
-        this.projectile = isProjectileInput;
+    public void setUseProjectile(boolean isProjectileInput) {
+        this.useProjectile = isProjectileInput;
     }
 
-    public boolean getProjectile() {
-        return projectile;
+    public boolean getUseProjectile() {
+        return useProjectile;
     }
 
     public void resetProjectileCharge() {
@@ -119,16 +107,16 @@ public class PlayerInput {
         return projectileCharge;
     }
 
-    public void setMelee(boolean isMeleeInput) {
-        this.melee = isMeleeInput || this.melee;
+    public void setUseMelee(boolean isMeleeInput) {
+        this.useMelee = isMeleeInput || this.useMelee;
     }
 
     public void resetMelee() {
-        this.melee = false;
+        this.useMelee = false;
     }
 
-    public boolean getMelee() {
-        return melee;
+    public boolean getUseMelee() {
+        return useMelee;
     }
 
     public boolean getMeleeHit() {
@@ -143,5 +131,13 @@ public class PlayerInput {
     public void resetMeleeHit() {
         meleeHitCount = 0;
         meleeHit = false;
+    }
+
+    public Vector2 getCursor() {
+        return cursor;
+    }
+
+    public void setCursor(Vector2 cursor) {
+        this.cursor = cursor;
     }
 }

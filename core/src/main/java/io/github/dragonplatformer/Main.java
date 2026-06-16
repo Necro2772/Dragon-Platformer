@@ -25,7 +25,7 @@ public class Main extends Game {
         font.getData().setScale(27f / Gdx.graphics.getHeight() * 15);
         manager = new AssetManager();
 
-        menu = new MainMenu(this, "tiledmaps/combat-test.tmx");
+        menu = new MainMenu(this, "tiledmaps/cave-1.tmx");
         this.setScreen(menu);
     }
 

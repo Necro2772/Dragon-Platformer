@@ -1,39 +1,46 @@
 package io.github.dragonplatformer.Entity.Actor.Player;
 
+import com.badlogic.gdx.graphics.g2d.ParticleEffect;
+import com.badlogic.gdx.graphics.g2d.ParticleEmitter;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import io.github.dragonplatformer.Entity.AnimationEvent;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.Actor.Actor;
 import io.github.dragonplatformer.Entity.Actor.Enemy.Enemy;
-import io.github.dragonplatformer.Entity.Actor.Enemy.EnemyState;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.Claw;
+import io.github.dragonplatformer.Entity.Effect.AttackEffect.Projectile.ExplosiveFireball;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.Projectile.Fireball;
-import io.github.dragonplatformer.Entity.Effect.AttackEffect.Projectile.Projectile;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.ProjectileShootVisual;
 import io.github.dragonplatformer.Entity.Effect.Loot.Loot;
 import io.github.dragonplatformer.Entity.Effect.Loot.LootType;
+import io.github.dragonplatformer.Entity.EffectManager;
 import io.github.dragonplatformer.GameContactListener;
 import io.github.dragonplatformer.GameScreen;
 
 public class Player extends Actor<PlayerState> {
     private final GameScreen screen;
-    public final PlayerInput input;
-    private final PlayerUpgrades upgrades;
+    public final PlayerInput input = new PlayerInput();
+    private final PlayerUpgrades upgrades = new PlayerUpgrades();
     private final int itemPickupFixtureIndex;
     private final int evadeFixtureIndex;
-    private int enemyContact;
-    private int evadeContact;
+    private int enemyContact = 0;
+    private int evadeContact = 0;
     private Enemy enemyContactEntity;
+    private ParticleEffect glideEffect;
+    private ParticleEffect projectileChargeEffect;
 
-    public Player(float x, float y, World world, GameScreen screen, AnimationManager animManager) {
+    public Player(float x, float y, World world, GameScreen screen, EffectManager effectManager, AnimationManager animManager) {
         super(x, y, 2, 2, animManager.getPlayerAnimations(), animManager.getPlayerAnimEvents(),
-            animManager, world);
+            effectManager, animManager, world);
         this.screen = screen;
 
         setAsPlayer();
         setHitboxShapeCircle(0.7f);
         setMass(2f);
+        setStats(new PlayerStats());
+        setAutoMove(false);
         init();
 
         FixtureDef itemPickupDef = new FixtureDef();
@@ -60,48 +67,77 @@ public class Player extends Actor<PlayerState> {
         evadeFixtureIndex = getBody().getFixtureList().indexOf(evadeFixture, true);
         evadeShape.dispose();
 
-        input = new PlayerInput();
-        setStats(new PlayerStats());
-        upgrades = new PlayerUpgrades();
         upgrades.upgrade(PlayerUpgrades.Upgrade.FIREBALL_LARGE);
         state = PlayerState.IDLE;
-
-        enemyContact = 0;
-        evadeContact = 0;
-        //getBody().setGravityScale(0.8f);
-        setAutoMove(false);
-
     }
 
     @Override
     public void act(float delta) {
         super.act(delta);
+        getTargetPos().set(input().getCursor());
         if (stats().isEvading() && evadeContact > 0) input().setEvadeDash(true);
         input().update(delta);
         updatePlayerState();
         updatePlayerMovement(delta);
-        updateAnimationFlags(delta);
         if (input().meleeHit) {
             meleeHitEffect();
             input().resetMeleeHit();
         }
-        if (enemyContact > 0) {
-            if (enemyContactEntity.getState() != EnemyState.DEATH && enemyContactEntity.stats().getHitTimer() <= 0) {
-                //damage(1, enemyContactEntity.getBody().getPosition(), 5);
+        if (input().isGliding()) {
+            if (glideEffect == null) {
+                glideEffect = effectManager.obtainGlide();
+                glideEffect.start();
+                for (ParticleEmitter emitter : glideEffect.getEmitters()) {
+                    emitter.setContinuous(true);
+                }
+            }
+            Vector2 pos = getPosition();
+            float angle = getBody().getLinearVelocity().angleDeg();
+            glideEffect.setPosition(pos.x, pos.y);
+//            for (ParticleEmitter emitter : glideEffect.getEmitters()) {
+//                if (emitter.getName().equals("wind")) emitter.getAngle().setHigh(angle);
+//            }
+        } else {
+            if (glideEffect != null) {
+                glideEffect.setDuration(0);
+                glideEffect.getEmitters().first().setContinuous(false);
+                glideEffect = null;
             }
         }
+        if (input().getUseProjectile()) {
+            Vector2 pos = getPosition().add(getSpriteDirection(), -0.2f);
+            float angle = new Vector2(getTargetPos()).sub(getPosition()).angleDeg();
+            if (projectileChargeEffect == null) {
+                projectileChargeEffect = effectManager.obtainChargeFirePlayer();
+                projectileChargeEffect.setPosition(pos.x, pos.y);
+                projectileChargeEffect.start();
+            }
+            projectileChargeEffect.setPosition(pos.x, pos.y);
+            for (ParticleEmitter emitter : projectileChargeEffect.getEmitters()) {
+                emitter.getAngle().setHigh(angle);
+            }
+        } else {
+            if (projectileChargeEffect != null) {
+                projectileChargeEffect.setDuration(0);
+                projectileChargeEffect = null;
+            }
+        }
+//        if (enemyContact > 0) {
+//            if (enemyContactEntity.getState() != EnemyState.DEATH && enemyContactEntity.stats().getHitTimer() <= 0) {
+//                //damage(1, enemyContactEntity.getBody().getPosition(), 5);
+//            }
+//        }
     }
 
     private void updatePlayerState() {
-        if (getState().isNonBlocking() || getCurrentAnim().isAnimationFinished(getStateTime())) {
-            if (input().getMelee()) {
+        if (getState().isNonBlocking() || getCurrentAnim().isAnimationFinished(getStateTime())
+            || getState() == PlayerState.JUMP) {
+            if (input().getUseMelee()) {
                 meleeAttack();
                 input().resetMelee();
                 return;
-            } else if ((stats().getProjectileCD() <= 0 && input().getProjectile())
-                || (input().getProjectileCharge() > 0 && !input().getProjectile())) {
+            } else if (input().getProjectileCharge() > 0 && !input().getUseProjectile()) {
                 projectileAttack(input().getProjectileCharge());
-                input().resetProjectileCharge();
                 return;
             } else if (input().evade) {
                 setState(PlayerState.EVADE);
@@ -129,15 +165,15 @@ public class Player extends Actor<PlayerState> {
 
         PlayerState nextState = PlayerState.IDLE;
         if (isGrounded()) {
-            if (input().getInputDirection() != 0) nextState = PlayerState.RUNNING;
+            if (input().getInputDirection() != 0) nextState = PlayerState.RUN;
             if (input().upMove) nextState = PlayerState.JUMP;
         } else {
             if (input().isGliding()) {
                 nextState = PlayerState.GLIDE;
                 if (input().upMove) nextState = PlayerState.SOAR;
             } else {
-                nextState = PlayerState.FLYING;
-                if (input().upMove && stats().getJumpCD() <= 0) {
+                nextState = PlayerState.FLY;
+                if (input().upMove) {
                     nextState = PlayerState.JUMP;
                 }
             }
@@ -149,6 +185,7 @@ public class Player extends Actor<PlayerState> {
         }
 
         if (getState().isNonBlocking() && nextState != getState()) setState(nextState);
+        else if (getState() == PlayerState.JUMP && nextState == PlayerState.DIVE) setState(nextState);
     }
 
     private void meleeAttack() {
@@ -170,68 +207,51 @@ public class Player extends Actor<PlayerState> {
     }
 
     public void projectileAttack(float charge) {
+        Vector2 pos = new Vector2(getBody().getPosition().x + getSpriteDirection() * 2, getBody().getPosition().y - 0.25f);
         switch (upgrades.getProjectile()) {
             case FIREBALL_LARGE:
                 if (charge > 0.8f) {
-                    shootProjectile(PlayerUpgrades.Upgrade.FIREBALL_LARGE);
+                    new ExplosiveFireball(1, 5, 5, pos.x, pos.y, 1,
+                        getTargetPos(), effectManager, animManager, true, getBody().getWorld());
+                    applyWeightedImpulse(getPosition().sub(getTargetPos()).setLength(stats().fireballLargeRecoil));
+                    new ProjectileShootVisual(pos.x - getSpriteDirection(), pos.y,
+                        effectManager, animManager, getBody().getWorld());
+                    stats().resetProjectileCD();
+                    input().resetProjectileCharge();
                 } else if (charge > 0.4) {
-                    shootProjectile(PlayerUpgrades.Upgrade.FIREBALL_MEDIUM);
+                    new Fireball(
+                        1, 3, 1, pos.x, pos.y, 1,
+                        getTargetPos(), effectManager, animManager, true, getBody().getWorld()
+                    );
+                    stats().resetProjectileCD();
+                    input().resetProjectileCharge();
                 } else if (stats().getProjectileCD() <= 0){
-                    shootProjectile(PlayerUpgrades.Upgrade.FIREBALL_BASIC);
+                    new Fireball(
+                        1, 3, 1, pos.x, pos.y, 1,
+                        getTargetPos(), effectManager, animManager, true, getBody().getWorld()
+                    );
+                    stats().resetProjectileCD();
+                    input().resetProjectileCharge();
                 }
-                stats().resetProjectileCD();
                 return;
             case FIREBREATH:
                 if (input().projectileCharge > 0.25f) {
-                    shootProjectile(PlayerUpgrades.Upgrade.FIREBREATH);
+//                projectile = new Firebreath(0.5f, 0f, 1f, impulse, 0.5f - input.breathCount / 30, pos.x, pos.y,
+//                    2f, 1, getSpriteDirection(), animManager, true, getBody().getWorld());
+//                impulse.rotateDeg((float) Math.random() * 60 - 30);
+//                impulse.scl(0.6f, 0.9f);
                     //stats().resetProjectileCD(0.05f + (getInput().breathCount) / 80);
                     stats().resetProjectileCD(0.05f);
                 }
                 return;
             case FIREBALL_BASIC:
                 stats().resetProjectileCD();
-                shootProjectile(PlayerUpgrades.Upgrade.FIREBALL_BASIC);
+                input().resetProjectileCharge();
+                new Fireball(
+                    1, 3, 1, pos.x, pos.y, 1,
+                    new Vector2(pos).add(getSpriteDirection(), 0), effectManager, animManager, true, getBody().getWorld()
+                );
         }
-    }
-
-    /**
-     * Spawns a projectile object depending on current upgrade.
-     * @param type current upgrade for the player projectile
-     */
-    public void shootProjectile(PlayerUpgrades.Upgrade type) {
-        Projectile projectile;
-        Vector2 pos = new Vector2(getBody().getPosition().x + getSpriteDirection() * 2, getBody().getPosition().y - 0.25f);
-        //Vector2 impulse = new Vector2(stats().projectileSpeed * getSpriteDirection(), 0);
-        //if (input.upMove) impulse.y = stats().projectileSpeed;
-        //else if (input.downMove) impulse.y = -stats().projectileSpeed;
-        switch (type) {
-//            case FIREBREATH:
-//                projectile = new Firebreath(0.5f, 0f, 1f, impulse, 0.5f - input.breathCount / 30, pos.x, pos.y,
-//                    2f, 1, getSpriteDirection(), animManager, true, getBody().getWorld());
-//                impulse.rotateDeg((float) Math.random() * 60 - 30);
-//                impulse.scl(0.6f, 0.9f);
-//                break;
-//            case FIREBALL_LARGE:
-//                projectile = new ExplosiveFireball(4, 5, 5, pos.x, pos.y, 3, 1,
-//                    getSpriteDirection(), animManager, true, getBody().getWorld());
-//                //recoil(new Vector2(getBody().getPosition().add(impulse)), 30);
-//                new ProjectileShootVisual(pos.x - getSpriteDirection(), pos.y, getSpriteDirection(), animManager, getBody().getWorld())
-//                    .setRotation(impulse.angleDeg());
-//                break;
-//            case FIREBALL_MEDIUM:
-//                projectile = new Fireball(2, 4, 2, pos.x, pos.y, 2.5f, 1,
-//                    getSpriteDirection(), getPosition().add(getSpriteDirection(), 0), animManager, true, getBody().getWorld());
-//                //recoil(new Vector2(getBody().getPosition().add(impulse)), 15);
-//                new ProjectileShootVisual(pos.x - getSpriteDirection(), pos.y, getSpriteDirection(), animManager, getBody().getWorld())
-//                    .setRotation(impulse.angleDeg());
-//                break;
-            case FIREBALL_BASIC:
-            default:
-                projectile = new Fireball(1, 3, 1, pos.x, pos.y, 1,
-                    new Vector2(pos).add(getSpriteDirection(), 0), animManager, true, getBody().getWorld());
-        }
-        //projectile.getBody().applyLinearImpulse(impulse, new Vector2(0, 0), true);
-        //projectile.setRotation(impulse.angleDeg());
     }
 
     private void updatePlayerMovement(float delta) {
@@ -243,7 +263,7 @@ public class Player extends Actor<PlayerState> {
         boolean gravityEnabled = true;
 
         if (input.getInputDirection() != 0 && getSpriteDirection() != input.getInputDirection()
-            && getState().isNonBlocking()) {
+            && (getState().isNonBlocking() || getState() == PlayerState.JUMP)) {
             setSpriteDirection(input.getInputDirection());
         }
 
@@ -288,7 +308,7 @@ public class Player extends Actor<PlayerState> {
                 maxVel.x = stats().flyVelX;
                 accel.x = stats().jumpAccX;
                 break;
-            case FLYING:
+            case FLY:
                 maxVel.x = stats().flyVelX;
                 accel.x = stats().flyAccX;
                 break;
@@ -341,6 +361,9 @@ public class Player extends Actor<PlayerState> {
                 applyTimedImpulse(0, jumpForce - vel.y * 0.8f, 0.2f);
                 input().numJumps--;
                 stats().resetJumpCD();
+                ParticleEffect wingFlapEffect = effectManager.obtainFlapWind();
+                wingFlapEffect.setPosition(getPosition().x, getPosition().y);
+                wingFlapEffect.reset();
                 break;
             case GLIDE:
                 if (stats().getGlideCharge() > stats().glideChargeMin) {
@@ -357,7 +380,7 @@ public class Player extends Actor<PlayerState> {
                 applyTimedImpulse(0, stats().soarImpulseY, 0.3f);
                 break;
             case EVADE_HORIZONTAL:
-                new ProjectileShootVisual(getPosition().x, getPosition().y, animManager, getBody().getWorld());
+                new ProjectileShootVisual(getPosition().x, getPosition().y, effectManager, animManager, getBody().getWorld());
                 int dir = input().getInputDirection();
                 if (dir == 0) dir = getSpriteDirection();
                 applyTimedImpulse(stats().evadeImpulse * dir, 0, 0.1f);
@@ -366,47 +389,29 @@ public class Player extends Actor<PlayerState> {
                 stats().chargeSoar(0.5f);
                 break;
             case EVADE_UP:
-                new ProjectileShootVisual(getPosition().x, getPosition().y, animManager, getBody().getWorld());
+                new ProjectileShootVisual(getPosition().x, getPosition().y, effectManager, animManager, getBody().getWorld());
                 applyTimedImpulse(0, stats().evadeImpulse, 0.1f);
                 input().setGlide(true);
                 stats().chargeGlide(0.5f);
                 stats().chargeSoar(0.5f);
                 break;
             case EVADE_DOWN:
-                new ProjectileShootVisual(getPosition().x, getPosition().y, animManager, getBody().getWorld());
+                new ProjectileShootVisual(getPosition().x, getPosition().y, effectManager, animManager, getBody().getWorld());
                 applyTimedImpulse(0, -stats().evadeImpulse, 0.1f);
                 input().setGlide(true);
                 stats().chargeGlide(0.5f);
                 stats().chargeSoar(0.5f);
                 break;
-            case ATTACK_GROUND1:
-            case ATTACK_FORWARD1:
-                new Claw(
-                    1, 1, 3, 1,
-                    getHitboxPosition().add(2f * getSpriteDirection(), 0),
-                    animManager, getBody()
-                ).setSpawnDelay(0.1f);
-                break;
-            case ATTACK_GROUND2:
-            case ATTACK_FORWARD2:
-                Claw claw = new Claw(
-                    1, 1, 3, 1,
-                    getHitboxPosition().add(2f * getSpriteDirection(), 0),
-                    animManager, getBody()
-                );
-                claw.setSpriteDirection(-1);
-                claw.setSpawnDelay(0.1f);
-                break;
             case ATTACK_DOWN:
                 new Claw(
-                    1, 1, 2, 2, getHitboxPosition().add(0, -2),
-                    animManager, getBody()
+                    1, 10, 2, 2, getHitboxPosition().add(0, -2),
+                    effectManager, animManager, getBody()
                 ).setSpawnDelay(0.1f);
                 break;
             case ATTACK_UP:
                 new Claw(
-                    1, 1, 2, 2, getHitboxPosition().add(0, 2),
-                    animManager, getBody()
+                    1, 10, 2, 2, getHitboxPosition().add(0, 2),
+                    effectManager, animManager, getBody()
                 ).setSpawnDelay(0.1f);
                 break;
             case ATTACK_GLIDE:
@@ -414,28 +419,28 @@ public class Player extends Actor<PlayerState> {
                     stats().attackGlideImpulseX * getSpriteDirection(), stats().attackGlideImpulseY, 0.1f
                 );
                 new Claw(
-                    1, 0, 3, 3,
-                    getHitboxPosition().add(1f * getSpriteDirection(), 0), animManager, getBody()
+                    1, 15, 3, 3,
+                    getHitboxPosition().add(1f * getSpriteDirection(), 0), effectManager, animManager, getBody()
                 ).setSpawnDelay(0.2f);
                 break;
             case ATTACK_DIVE:
                 applyTimedImpulse(0, -stats().attackVerticalImpulse, 0.1f);
                 new Claw(
-                    1, 0, 3, 3, getHitboxPosition().add(0, -1),
-                    animManager, getBody()
+                    1, 15, 3, 3, getHitboxPosition().add(0, -1),
+                    effectManager, animManager, getBody()
                 ).setSpawnDelay(0.2f);
                 break;
             case ATTACK_DIVE_LAND:
                 new Claw(
-                    1, 4, 4, 1, getHitboxPosition().add(0, -1),
-                    animManager, getBody()
+                    1, 15, 4, 1, getHitboxPosition().add(0, -1),
+                    effectManager, animManager, getBody()
                 );
                 break;
             case ATTACK_SOAR:
                 applyTimedImpulse(0, stats().attackVerticalImpulse, 0.1f);
                 new Claw(
-                    1, 0, 3, 3, getHitboxPosition().add(0, 1),
-                    animManager, getBody()
+                    1, 15, 3, 3, getHitboxPosition().add(0, 1),
+                    effectManager, animManager, getBody()
                 ).setSpawnDelay(0.2f);
                 break;
         }
@@ -478,29 +483,38 @@ public class Player extends Actor<PlayerState> {
     }
 
     @Override
-    protected void updateAnimationFlags(float delta) {
-        if (animEvents.containsKey(state)) {
-            for (AnimationEvent animEvent : animEvents.get(state)) {
-                if (getStateTime() - delta < animEvent.time && getStateTime() >= animEvent.time) {
-                    switch (animEvent.event) {
-                        case "evadestart":
-                            stats().setEvading(true);
-                            break;
-                        case "evadeend":
-                            stats().setEvading(false);
-                            break;
-                        case "invstart":
-                            stats().setiFramesActive(true);
-                            break;
-                        case "invend":
-                            stats().setiFramesActive(false);
-                            break;
-                        default:
-                            System.err.printf("Unknown Player AnimationEvent in state [%s]: %s%n",
-                                state.name(), animEvent);
-                    }
+    protected void onAnimEvent(AnimationEvent animEvent) {
+        super.onAnimEvent(animEvent);
+        switch (animEvent.event) {
+            case evadestart:
+                stats().setEvading(true);
+                break;
+            case evadeend:
+                stats().setEvading(false);
+                break;
+            case iframestart:
+                stats().setiFramesActive(true);
+                break;
+            case iframeend:
+                stats().setiFramesActive(false);
+                break;
+            case hitframe:
+                switch (getState()) {
+                    case ATTACK_GROUND1:
+                    case ATTACK_GROUND2:
+                    case ATTACK_FORWARD1:
+                    case ATTACK_FORWARD2:
+                        new Claw(
+                            1, 10, 3, 1.5f,
+                            getHitboxPosition().add(2f * getSpriteDirection(), 0.2f),
+                            effectManager, animManager, getBody()
+                        );
+                        break;
                 }
-            }
+                break;
+            default:
+                System.err.printf("Unknown Player AnimationEvent in state [%s]: %s%n",
+                    state.name(), animEvent);
         }
     }
 
@@ -515,14 +529,15 @@ public class Player extends Actor<PlayerState> {
         if (getBody().getFixtureList().indexOf(entityFixture, true) == getJumpSensorIndex()) {
             input().numJumps = stats().getMaxJumps();
         } else if (getBody().getFixtureList().indexOf(entityFixture, true) == getHitboxIndex()) {
-            if (contactFixture.getUserData() instanceof Enemy) {
-                enemyContact++;
-                Enemy e = (Enemy) contactFixture.getUserData();
-                enemyContactEntity = e;
-                if (e.getState() != EnemyState.DEATH && e.stats().getHitTimer() <= 0) {
-                    //damage(1, e.getBody().getPosition(), 5);
-                }
-            } else if (contactFixture.getUserData() instanceof Loot) {
+//            if (contactFixture.getUserData() instanceof Enemy) {
+//                enemyContact++;
+//                Enemy e = (Enemy) contactFixture.getUserData();
+//                enemyContactEntity = e;
+//                if (e.getState() != EnemyState.DEATH && e.stats().getHitTimer() <= 0) {
+//                    //damage(1, e.getBody().getPosition(), 5);
+//                }
+//            } else
+                if (contactFixture.getUserData() instanceof Loot) {
                 Loot loot = (Loot) contactFixture.getUserData();
                 if (!loot.isLooted()) {
                     loot(loot);
@@ -565,7 +580,7 @@ public class Player extends Actor<PlayerState> {
             return false;
         }
         if (stats().isIntangible()) return false;
-        if (super.damage(attackDamage, attackOrigin, 20, entityFixture)) {
+        if (super.damage(attackDamage, attackOrigin, knockback, entityFixture)) {
             stats().setInvulnerable(1.5f);
             return true;
         }
@@ -575,6 +590,12 @@ public class Player extends Actor<PlayerState> {
     @Override
     public void death() {
         screen.gameOver();
+    }
+
+    @Override
+    public void debugDraw(Matrix4 projectionMatrix) {
+        super.debugDraw(projectionMatrix);
+        //Utils.drawLine(getPosition(), getTargetPos(), 2, Color.BLUE, projectionMatrix);
     }
 
     public PlayerInput input() {

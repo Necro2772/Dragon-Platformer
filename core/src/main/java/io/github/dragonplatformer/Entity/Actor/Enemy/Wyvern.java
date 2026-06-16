@@ -1,37 +1,30 @@
 package io.github.dragonplatformer.Entity.Actor.Enemy;
 
+import com.badlogic.gdx.graphics.g2d.ParticleEffect;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
-import io.github.dragonplatformer.Entity.AnimationKey;
-import io.github.dragonplatformer.Entity.AnimationManager;
-import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.Claw;
+import io.github.dragonplatformer.Entity.*;
+import io.github.dragonplatformer.Entity.Effect.AttackEffect.Projectile.Fireball;
 
 public class Wyvern extends Enemy {
     private final float idleWait;
-    private float idleWaitCurrent;
-    private final float attackWait;
-    private final Vector2 attackTarget;
+    private final float attackDelay;
+    private ParticleEffect fireChargeEffect;
 
-    public Wyvern(float x, float y, World world, AnimationManager animManager) {
-        super(x, y, 2, 2, world, animManager, AnimationKey.ENEMY_MANTICORE);
+    public Wyvern(float x, float y, World world, EffectManager effectManager, AnimationManager animManager) {
+        super(x, y, 1.5f, 1.5f, world, effectManager, animManager, AnimationKey.ENEMY_WYVERN);
         setPlayerSensorShape(new Vector2(15, 20), new Vector2(0, 0));
         init();
         stats().setMaxHealth(3);
         stats().setCrystalLoot(2);
         stats().setAggroRange(50);
-        stats().setMinDst2(4);
-        stats().setMaxDst2(25);
-        stats().setDisperseForce(30);
-        setDisperseDist(6);
-        stats().walkSpeed = 3;
-        stats().runSpeed = 5;
+        stats().walkSpeed = 2;
+        stats().runSpeed = 4;
 
         setFlying(true);
 
-        idleWait = 2f;
-        idleWaitCurrent = idleWait;
-        attackWait = 0.55f;
-        attackTarget = new Vector2();
+        idleWait = 3f;
+        attackDelay = 0.5f;
     }
 
     @Override
@@ -41,23 +34,15 @@ public class Wyvern extends Enemy {
 
         switch (getState()) {
             case IDLE:
-                setState(EnemyState.FLYIDLE);
-                break;
-            case FLYIDLE:
-                if (stats().isPlayerInRange() && getPosition().dst2(stats().getPlayerPos()) < 25) {
-                    idleWaitCurrent -= delta;
-                    if (idleWaitCurrent <= 0) {
-                        idleWaitCurrent = idleWait;
-                        setState(EnemyState.FLYCHARGESHOOTPROJECTILE);
-                    }
+                if (stats().getComboCount() < 5) {
+                    setState(EnemyState.ATTACK);
+                } else if (getStateTime() > idleWait && stats().isPlayerInRange()) {
+                    stats().resetComboCount();
+                    setState(EnemyState.ATTACK);
                 }
                 break;
-            case FLYCHARGESHOOTPROJECTILE:
-                if (getStateTime() > attackWait) {
-                    setState(EnemyState.FLYSHOOTPROJECTILE);
-                }
-                break;
-            case FLYSHOOTPROJECTILE:
+            case ATTACK:
+                fireChargeEffect.setPosition(getPosition().x + 0.7f * getSpriteDirection(), getPosition().y);
                 break;
         }
     }
@@ -66,17 +51,38 @@ public class Wyvern extends Enemy {
     public void beginState() {
         super.beginState();
         switch (getState()) {
-            case FLYIDLE:
-                stats().resetComboCount();
+            case IDLE:
                 break;
-            case FLYCHARGESHOOTPROJECTILE:
-                attackTarget.set(stats().getPlayerPos());
-                break;
-            case FLYSHOOTPROJECTILE:
+            case ATTACK:
                 stats().incrementComboCount();
-                new Claw(1, 1, 3,
-                    new Vector2(attackTarget).sub(getPosition()).setLength(2), animManager, getBody());
+                fireChargeEffect = effectManager.obtainChargeFire();
+                fireChargeEffect.start();
+                fireChargeEffect.setPosition(getPosition().x + 0.7f * getSpriteDirection(), getPosition().y);
+                fireChargeEffect.setDuration(500);
                 break;
+        }
+    }
+
+    @Override
+    protected void endState() {
+        super.endState();
+        switch (getState()) {
+            case IDLE:
+                break;
+            case ATTACK:
+                break;
+        }
+    }
+
+    @Override
+    protected void onAnimEvent(AnimationEvent animEvent) {
+        super.onAnimEvent(animEvent);
+        if (animEvent.event == AnimationEventKey.hitframe) {
+            new Fireball(
+                1, 5, 1, getBody().getPosition().x,
+                getBody().getPosition().y + getWidth() / 2f, 1, new Vector2(stats().getPlayerPos()),
+                effectManager, animManager, false, getBody().getWorld()
+            );
         }
     }
 }

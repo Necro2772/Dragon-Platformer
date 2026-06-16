@@ -4,7 +4,7 @@ import io.github.dragonplatformer.Entity.EntityState;
 
 public enum EnemyState implements EntityState {
     IDLE,
-    ATTACKING (IDLE),
+    ATTACK(IDLE),
     DEATH,
     CHARGELUNGE (IDLE),
     LUNGE (IDLE),

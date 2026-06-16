@@ -5,21 +5,21 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
+import io.github.dragonplatformer.Entity.EffectManager;
 import io.github.dragonplatformer.Entity.Entity;
 
 public abstract class Effect extends Entity<EffectState> {
-    private boolean isDisjointFixture;
-    public Effect(float width, float height, AnimationKey animKey, AnimationManager animManager, Body body) {
+    private boolean isDisjointFixture = false;
+    public Effect(float width, float height, AnimationKey animKey, EffectManager effectManager,
+                  AnimationManager animManager, Body body) {
         super(width, height, animManager.getEffectAnims(animKey), animManager.getEffectAnimEvents(animKey),
-            animManager, body);
-        setDisjointFixture(false);
+            effectManager, animManager, body);
     }
 
-    public Effect(float x, float y, float width, float height, AnimationKey animKey,
+    public Effect(float x, float y, float width, float height, AnimationKey animKey, EffectManager effectManager,
                   AnimationManager animManager, World world) {
         super(x, y, width, height, animManager.getEffectAnims(animKey), animManager.getEffectAnimEvents(animKey),
-            animManager, world);
-        setDisjointFixture(false);
+            effectManager, animManager, world);
     }
 
     @Override
@@ -30,6 +30,7 @@ public abstract class Effect extends Entity<EffectState> {
             setFloating(true);
             damping().set(0, 0);
         }
+        setVisible(false);
     }
 
     @Override

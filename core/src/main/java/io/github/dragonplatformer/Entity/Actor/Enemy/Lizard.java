@@ -6,12 +6,12 @@ import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.Projectile.Fireball;
-import io.github.dragonplatformer.Entity.Effect.AttackEffect.Projectile.Projectile;
+import io.github.dragonplatformer.Entity.EffectManager;
 
 public class Lizard extends Enemy {
 
-    public Lizard(float x, float y, World world, AnimationManager animManager) {
-        super(x, y, 1.5f, 1.5f, world, animManager, AnimationKey.ENEMY_LIZARD);
+    public Lizard(float x, float y, World world, EffectManager effectManager, AnimationManager animManager) {
+        super(x, y, 1.5f, 1.5f, world, effectManager, animManager, AnimationKey.ENEMY_LIZARD);
         init();
         stats().setMaxHealth(3);
         stats().setAttackCD(2);
@@ -24,7 +24,7 @@ public class Lizard extends Enemy {
         super.act(delta);
 
         if (stats().isPlayerSighted() && stats().getAttackOnCD()) {
-            setState(EnemyState.ATTACKING);
+            setState(EnemyState.ATTACK);
             stats().resetAttackCD();
         }
         Vector2 vel = getBody().getLinearVelocity();
@@ -46,9 +46,9 @@ public class Lizard extends Enemy {
         super.beginState();
 
         switch (getState()) {
-            case ATTACKING:
+            case ATTACK:
                 new Fireball(1, 5, 1, getBody().getPosition().x, getBody().getPosition().y,
-                    1, new Vector2(stats().getPlayerPos()), animManager, false, getBody().getWorld());
+                    1, new Vector2(stats().getPlayerPos()), effectManager, animManager, false, getBody().getWorld());
 
         }
     }

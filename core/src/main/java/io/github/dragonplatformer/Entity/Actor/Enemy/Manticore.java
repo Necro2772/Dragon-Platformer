@@ -6,6 +6,7 @@ import com.badlogic.gdx.utils.Queue;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.Projectile.Fireball;
+import io.github.dragonplatformer.Entity.EffectManager;
 
 public class Manticore extends Enemy {
     private Vector2 target;
@@ -15,8 +16,8 @@ public class Manticore extends Enemy {
     private float pounceChargeTime;
     private float pounceDuration;
     private float projectileChargeTime;
-    public Manticore(float x, float y, World world, AnimationManager animManager) {
-        super(x, y, 6, 6, world, animManager, AnimationKey.ENEMY_MANTICORE);
+    public Manticore(float x, float y, World world, EffectManager effectManager, AnimationManager animManager) {
+        super(x, y, 6, 6, world, effectManager, animManager, AnimationKey.ENEMY_MANTICORE);
         //setHitboxShape(new Vector2(2, 2), new Vector2(1, 0));
         setPlayerSensorShape(new Vector2(30, 20));
         stats().setAggroRange(100);
@@ -160,7 +161,7 @@ public class Manticore extends Enemy {
         float spread = 120;
         for (int i = 0; i < numProjectiles; i++) {
             Fireball projectile = new Fireball(1, 10, 2, getBody().getPosition().x, getBody().getPosition().y,
-                2, new Vector2(stats().getPlayerPos()), animManager, false, getBody().getWorld());
+                2, new Vector2(stats().getPlayerPos()), effectManager, animManager, false, getBody().getWorld());
 //            float rot = spread * (i) / (numProjectiles - 1) - spread / 2;
 //            Vector2 aim = new Vector2(stats().getPlayerPos()).sub(projectile.getBody().getPosition()).rotateDeg(rot);
 //            projectile.setRotation(aim.angleDeg());

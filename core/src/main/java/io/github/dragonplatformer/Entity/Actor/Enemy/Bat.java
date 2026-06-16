@@ -4,14 +4,15 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
+import io.github.dragonplatformer.Entity.EffectManager;
 
 public class Bat extends Enemy {
     private float waitTime;
     private final float playerDist;
     private Vector2 attackDirection;
 
-    public Bat(float x, float y, World world, AnimationManager animManager) {
-        super(x, y, 1f, 1f, world, animManager, AnimationKey.ENEMY_BAT);
+    public Bat(float x, float y, World world, EffectManager effectManager, AnimationManager animManager) {
+        super(x, y, 1f, 1f, world, effectManager, animManager, AnimationKey.ENEMY_BAT);
         setPlayerSensorShape(new Vector2(15, 20), new Vector2(0, 0));
         init();
         stats().setMaxHealth(1);
@@ -36,7 +37,7 @@ public class Bat extends Enemy {
             switch (getState()) {
                 case IDLE:
                     if (waitTime <= 0) {
-                        setState(EnemyState.ATTACKING);
+                        setState(EnemyState.ATTACK);
                         waitTime = (float) Math.random() * 5 + 5;
                     } else if (stats().isPlayerSighted()) {
                         impulse.x = 4;
@@ -58,7 +59,7 @@ public class Bat extends Enemy {
                         }
                     }
                     break;
-                case ATTACKING:
+                case ATTACK:
                     if (getStateTime() > 1.5f) setState(EnemyState.IDLE);
                     float speed = 20;
                     float accel = 5;
@@ -77,7 +78,7 @@ public class Bat extends Enemy {
     @Override
     public void beginState() {
         super.beginState();
-        if (getState() == EnemyState.ATTACKING) {
+        if (getState() == EnemyState.ATTACK) {
             attackDirection = new Vector2(stats().getPlayerPos());
             attackDirection.sub(getBody().getPosition());
             attackDirection.nor();

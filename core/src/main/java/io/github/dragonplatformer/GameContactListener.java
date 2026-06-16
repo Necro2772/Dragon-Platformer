@@ -49,7 +49,8 @@ public class GameContactListener implements ContactListener {
         LOOT ((short) -3),
         ENEMYATTACK ((short) -2),
         PLAYERATTACK ((short) -1),
-        ENEMYDEFAULT ((short) 1);
+        ENEMYDEFAULT ((short) 1),
+        ENEMYLARGE ((short) 2);
 
         final short groupBit;
 
@@ -63,13 +64,13 @@ public class GameContactListener implements ContactListener {
     }
 
     public enum FilterBits {
-        STATIC ((short) 1),
-        SENSOR ((short) 2),
-        PLAYER ((short) 4),
-        ENEMY ((short) 8),
-        EFFECT ((short) 16),
-        LOOT ((short) 32),
-        NONE ((short) 64);
+        STATIC ((short) (1)),
+        SENSOR ((short) (1 << 1)),
+        PLAYER ((short) (1 << 2)),
+        ENEMY ((short) (1 << 3)),
+        EFFECT ((short) (1 << 4)),
+        LOOT ((short) (1 << 5)),
+        NONE ((short) (1 << 6));
 
         final short categoryBit;
 

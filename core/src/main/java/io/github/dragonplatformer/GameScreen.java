@@ -2,10 +2,11 @@ package io.github.dragonplatformer;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.*;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.MapObjects;
@@ -41,45 +42,38 @@ public class GameScreen implements Screen {
     private final TiledMap map;
     private final OrthogonalTiledMapRenderer tiledMapRenderer;
     private final Label debugInfo;
-    private final Array<Body> bodies;
-    private final Array<AttackEffect> effects;
-    private final Array<Actor<?>> hitBodies;
-    private final Array<Actor<?>> invulBodies;
-    private final Array<Actor<?>> counterBodies;
+    private final Array<Body> bodies = new Array<>();
+    private final Array<AttackEffect> effects = new Array<>();
+    private final Array<Actor<?>> hitBodies = new Array<>();
+    private final Array<Actor<?>> invulBodies = new Array<>();
+    private final Array<Actor<?>> counterBodies = new Array<>();
     private final AnimationManager animManager;
+    private final EffectManager effectManager;
     private final ShaderProgram hitShader;
     private final ShaderProgram invulnerableShader;
     private final ShaderProgram counterShader;
-//    private float shaderTimer;
-    private boolean debug;
-    private final ArrayList<CameraArea> cameraAreas;
-    private int currentCameraArea;
-    private CameraArea cameraInterpolationArea;
-    private float cameraInterpolationTime;
+//    private float shaderTimer = 0;
+    private boolean debug = false;
+    private final ArrayList<CameraArea> cameraAreas = new ArrayList<>();
+    private int currentCameraArea = -1;
+    private CameraArea cameraInterpolationArea = null;
+    private float cameraInterpolationTime = 0;
+    private float gameTime = 0;
+
 
     public GameScreen(final Main game, final TiledMap map) {
         this.game = game;
         TextureAtlas atlas = game.manager.get("images/pack.atlas");
         animManager = new AnimationManager(atlas);
-        bodies = new Array<>();
-        hitBodies = new Array<>();
-        invulBodies = new Array<>();
-        counterBodies = new Array<>();
-        effects = new Array<>();
+        effectManager = new EffectManager(atlas);
         world = new World(new Vector2(0, -9.8f), true);
-        debug = false;
-//        shaderTimer = 0;
-        cameraAreas = new ArrayList<>();
-        cameraInterpolationArea = null;
-        cameraInterpolationTime = 0;
-        currentCameraArea = -1;
         if (game.batch == null) { // Debug setup if rendering won't work
             uiStage = null;
             debugRenderer = null;
             this.map = map;
             tiledMapRenderer = null;
             debugInfo = null;
-            player = new Player(0, 0, world, this, animManager);
+            player = new Player(0, 0, world, this, effectManager, animManager);
             hitShader = null;
             invulnerableShader = null;
             counterShader = null;
@@ -180,10 +174,10 @@ public class GameScreen implements Screen {
                 float height = (Float) properties.get("height") * tiledMapRenderer.getUnitScale();
                 float x = (Float) properties.get("x") * tiledMapRenderer.getUnitScale() + width / 2;
                 float y = (Float) properties.get("y") * tiledMapRenderer.getUnitScale() + height / 2;
-                new Portal(x, y, width, height, animManager, world, (String) properties.get("stageexit"), this);
+                new Portal(x, y, width, height, effectManager, animManager, world, (String) properties.get("stageexit"), this);
             }
         }
-        player = new Player(playerx, playery, world, this, animManager);
+        player = new Player(playerx, playery, world, this, effectManager, animManager);
         loadTilemapData();
 
         Label.LabelStyle style = new Label.LabelStyle();
@@ -207,19 +201,22 @@ public class GameScreen implements Screen {
                 String type = (String) enemy.getProperties().get("type");
                 switch (type) {
                     case "wyvern":
-                        new Wyvern(posx, posy, world, animManager);
+                        new Wyvern(posx, posy, world, effectManager, animManager);
+                        break;
+                    case "gargoyle":
+                        new Gargoyle(posx, posy, world, effectManager, animManager);
                         break;
                     case "lizard":
-                        new Lizard(posx, posy, world, animManager);
+                        new Lizard(posx, posy, world, effectManager, animManager);
                         break;
                     case "bat":
-                        new Bat(posx, posy, world, animManager);
+                        new Bat(posx, posy, world, effectManager, animManager);
                         break;
                     case "spikylizard":
-                        new SpikyLizard(posx, posy, world, animManager);
+                        new SpikyLizard(posx, posy, world, effectManager, animManager);
                         break;
                     case "manticore":
-                        new Manticore(posx, posy, world, animManager);
+                        new Manticore(posx, posy, world, effectManager, animManager);
                 }
             }
         }
@@ -286,11 +283,13 @@ public class GameScreen implements Screen {
         for (int index = 0; index < bodies.size; index++) {
             if (bodies.get(index).getUserData() instanceof Entity) {
                 Entity<?> e = (Entity<?>) bodies.get(index).getUserData();
-                e.act(delta);
+                if (!e.isHitStunned()) e.act(delta);
+                else e.updateHitStun(delta);
             }
             for (Fixture fixture : bodies.get(index).getFixtureList()) {
                 if (fixture.getUserData() != bodies.get(index).getUserData() && fixture.getUserData() != null) {
-                    ((Entity<?>) fixture.getUserData()).act(delta);
+                    Entity<?> e = ((Entity<?>) fixture.getUserData());
+                    if (!e.isHitStunned()) e.act(delta);
                 }
             }
         }
@@ -327,19 +326,18 @@ public class GameScreen implements Screen {
             cameraInterpolationTime = interpolationDuration;
             currentCameraArea = -1;
         }
-        if (currentCameraArea == -1) {
-            for (int i = 0; i < cameraAreas.size(); i++) {
-                if (cameraAreas.get(i).contains(player.getBody().getPosition())) {
-                    if (cameraInterpolationArea != null) cameraInterpolationTime = interpolationDuration;
-                    cameraInterpolationArea = new CameraArea(
-                        camera.position.x - viewportWidth * camera.zoom / 2,
-                        camera.position.y - viewportHeight * camera.zoom / 2,
-                        viewportWidth * camera.zoom,
-                        viewportHeight * camera.zoom
-                    );
-                    currentCameraArea = i;
-                    break;
-                }
+        int startAreaSearch = currentCameraArea != -1 ? currentCameraArea + 1 : 0;
+        for (int i = startAreaSearch; i < cameraAreas.size(); i++) {
+            if (cameraAreas.get(i).contains(player.getBody().getPosition())) {
+                if (cameraInterpolationArea != null) cameraInterpolationTime = interpolationDuration;
+                cameraInterpolationArea = new CameraArea(
+                    camera.position.x - viewportWidth * camera.zoom / 2,
+                    camera.position.y - viewportHeight * camera.zoom / 2,
+                    viewportWidth * camera.zoom,
+                    viewportHeight * camera.zoom
+                );
+                currentCameraArea = i;
+                break;
             }
         }
         float maxZoomOut = 1.2f;
@@ -411,12 +409,12 @@ public class GameScreen implements Screen {
         }
         game.batch.setShader(hitShader);
         for (Actor<?> actor : hitBodies) {
-            if (actor.getHitEffectTimer() > 0.1f) actor.draw(game.batch, delta);
+            if (actor.getHitEffectTimer() <= 0.1f) actor.draw(game.batch, delta);
         }
         game.batch.setShader(null);
         game.batch.setColor(Color.BLACK);
         for (Actor<?> actor : hitBodies) {
-            if (actor.getHitEffectTimer() <= 0.1f) actor.draw(game.batch, delta);
+            if (actor.getHitEffectTimer() > 0.1f) actor.draw(game.batch, delta);
         }
 
         game.batch.setShader(counterShader);
@@ -437,6 +435,8 @@ public class GameScreen implements Screen {
         for (AttackEffect effect : effects) {
             effect.draw(game.batch, delta);
         }
+        effectManager.draw(game.batch, delta);
+        game.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         game.batch.end();
 
         if (debug) {
@@ -452,9 +452,11 @@ public class GameScreen implements Screen {
             }
         }
 
+        gameTime += delta;
         uiStage.act(delta);
         debugInfo.setText(String.format(
-            "%n%nPlayer State: %s%n" +
+            "%n%nGame Time: %.2f%n" +
+                "Player State: %s%n" +
                 "State Time: %.2f%n" +
                 "Health: %.1f%n" +
                 "Crystals: %d%n" +
@@ -465,7 +467,7 @@ public class GameScreen implements Screen {
                 "Intangible: %s%n" +
                 "VelX: %.2f%n" +
                 "VelY: %.2f%n",
-            player.getState(), player.getStateTime(),
+            gameTime, player.getState(), player.getStateTime(),
             player.stats().getHealth(), player.stats().getCrystals(), player.stats().getGlideCharge(),
             player.stats().getSoarCharge(), player.input().glide, player.stats().isEvading(), player.stats().isIntangible(),
             player.getBody().getLinearVelocity().x, player.getBody().getLinearVelocity().y
@@ -473,6 +475,7 @@ public class GameScreen implements Screen {
         debugInfo.pack();
         debugInfo.setPosition(10, Gdx.graphics.getHeight() - debugInfo.getPrefHeight());
         uiStage.draw();
+
     }
 
     @Override
@@ -512,5 +515,9 @@ public class GameScreen implements Screen {
 
     public Player getPlayer() {
         return player;
+    }
+
+    public Camera getCamera() {
+        return game.viewport.getCamera();
     }
 }

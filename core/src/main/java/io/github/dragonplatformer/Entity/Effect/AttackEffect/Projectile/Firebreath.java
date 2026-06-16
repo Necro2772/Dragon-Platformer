@@ -4,13 +4,16 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
+import io.github.dragonplatformer.Entity.EffectManager;
 
 public class Firebreath extends Projectile {
     private final Vector2 windForce;
     private final float curve;
-    public Firebreath(float damage, float knockback, float health, Vector2 aimDirection, float lifetime, float x, float y, float width, float height, AnimationManager animManager, boolean isPlayer, World world) {
+    public Firebreath(float damage, float knockback, float health, Vector2 aimDirection, float lifetime,
+                      float x, float y, float width, float height, EffectManager effectManager,
+                      AnimationManager animManager, boolean isPlayer, World world) {
         super(damage, knockback, health, lifetime, x, y, width, height,
-            AnimationKey.EFFECT_FIREBALL, animManager, isPlayer, world);
+            AnimationKey.EFFECT_FIREBALL, effectManager, animManager, isPlayer, world);
         setReflectOnStatic();
         setPassThroughEnemies();
         init();

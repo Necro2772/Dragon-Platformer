@@ -2,6 +2,8 @@ package io.github.dragonplatformer;
 
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 import io.github.dragonplatformer.Entity.Actor.Player.Player;
 
 public class GameInputProcessor implements InputProcessor {
@@ -42,7 +44,7 @@ public class GameInputProcessor implements InputProcessor {
                 player.input.setEvade(true);
                 break;
             case Input.Keys.E:
-                player.input.setProjectile(true);
+                player.input.setUseProjectile(true);
                 break;
             case Input.Keys.B:
                 screen.setDebug(true);
@@ -77,7 +79,7 @@ public class GameInputProcessor implements InputProcessor {
                 player.input.setEvade(false);
                 break;
             case Input.Keys.E:
-                player.input.setProjectile(false);
+                player.input.setUseProjectile(false);
                 break;
             case Input.Keys.B:
                 screen.setDebug(false);
@@ -95,10 +97,10 @@ public class GameInputProcessor implements InputProcessor {
     public boolean touchDown(int screenX, int screenY, int pointer, int button) {
         switch (button) {
             case Input.Buttons.RIGHT:
-                player.input.setProjectile(true);
+                player.input.setUseProjectile(true);
                 break;
             case Input.Buttons.LEFT:
-                player.input.setMelee(true);
+                player.input.setUseMelee(true);
                 break;
         }
         return false;
@@ -108,10 +110,10 @@ public class GameInputProcessor implements InputProcessor {
     public boolean touchUp(int screenX, int screenY, int pointer, int button) {
         switch (button) {
             case Input.Buttons.RIGHT:
-                player.input.setProjectile(false);
+                player.input.setUseProjectile(false);
                 break;
             case Input.Buttons.LEFT:
-                player.input.setMelee(false);
+                player.input.setUseMelee(false);
                 break;
         }
         return false;
@@ -124,11 +126,15 @@ public class GameInputProcessor implements InputProcessor {
 
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
+        Vector3 worldCoords = screen.getCamera().unproject(new Vector3(screenX, screenY, 0));
+        player.input.setCursor(new Vector2(worldCoords.x, worldCoords.y));
         return false;
     }
 
     @Override
     public boolean mouseMoved(int screenX, int screenY) {
+        Vector3 worldCoords = screen.getCamera().unproject(new Vector3(screenX, screenY, 0));
+        player.input.setCursor(new Vector2(worldCoords.x, worldCoords.y));
         return false;
     }
 

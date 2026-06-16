@@ -5,23 +5,21 @@ import com.badlogic.gdx.physics.box2d.*;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.Effect.Effect;
+import io.github.dragonplatformer.Entity.EffectManager;
 import io.github.dragonplatformer.GameContactListener;
 
 public abstract class Loot extends Effect {
-    private boolean looted;
+    private boolean looted = false;
     public LootType type;
     public int value;
-    private Vector2 playerPos;
+    private Vector2 playerPos = null;
 
-    public Loot(float x, float y, float width, float height, World world,
+    public Loot(float x, float y, float width, float height, World world, EffectManager effectManager,
                 AnimationManager animManager, AnimationKey animKey,
                 LootType type, int value) {
-        super(x, y, width, height, animKey, animManager, world);
+        super(x, y, width, height, animKey, effectManager, animManager, world);
         this.type = type;
-        stateTime = 0;
-        looted = false;
         this.value = value;
-        playerPos = null;
 
         CircleShape collisionShape = new CircleShape();
         collisionShape.setRadius (width / 2f);

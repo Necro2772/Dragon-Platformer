@@ -8,6 +8,7 @@ import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.Actor.Player.Player;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.AttackEffect;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.EnemyDeathVisual;
+import io.github.dragonplatformer.Entity.EffectManager;
 import io.github.dragonplatformer.GameContactListener;
 
 import java.util.ArrayList;
@@ -17,9 +18,9 @@ public abstract class MeleeAttack extends AttackEffect {
     private Fixture attackFixture;
     private final boolean isPlayer;
     private final AnimationManager animManager;
-    private boolean enabled;
-    private float spawnDelay;
-    private final List<Fixture> bufferedContacts;
+    private boolean enabled = true;
+    private float spawnDelay = 0;
+    private final List<Fixture> bufferedContacts = new ArrayList<>();
 
     /** Creates a new attack hitbox attached to the given body. Does not create the fixture until init() is called.
      *
@@ -30,17 +31,13 @@ public abstract class MeleeAttack extends AttackEffect {
      * @param animKey animation key from AnimationManager.
      * @param body body to attach the hitbox fixture to.
      */
-    public MeleeAttack(float damage, float knockback, float width, float height,
-                       AnimationKey animKey, AnimationManager animManager, Body body) {
-        super(damage, knockback, width, height, animKey, animManager, body);
+    public MeleeAttack(float damage, float knockback, float width, float height, AnimationKey animKey,
+                       EffectManager effectManager, AnimationManager animManager, Body body) {
+        super(damage, knockback, width, height, animKey, effectManager, animManager, body);
         setDisjointFixture(true);
         this.isPlayer = body.getUserData() instanceof Player;
         this.animManager = animManager;
-        this.enabled = true;
-        this.spawnDelay = 0;
-        bufferedContacts = new ArrayList<>();
     }
-
 
     /** Creates a new attack hitbox attached to the given body. Does not create the fixture until init() is called.
      *
@@ -55,13 +52,10 @@ public abstract class MeleeAttack extends AttackEffect {
      * @param world Box2D world to create the body in.
      */
     public MeleeAttack(float x, float y, float damage, float knockback, float width, float height, AnimationKey animKey,
-                       AnimationManager animManager, boolean isPlayer, World world) {
-        super(damage, knockback, x, y, width, height, animKey, animManager, world);
+                       EffectManager effectManager, AnimationManager animManager, boolean isPlayer, World world) {
+        super(damage, knockback, x, y, width, height, animKey, effectManager, animManager, world);
         this.isPlayer = isPlayer;
         this.animManager = animManager;
-        this.enabled = true;
-        this.spawnDelay = 0;
-        bufferedContacts = new ArrayList<>();
     }
 
     /** Initializes the fixture using a rectangle with the given width and height.
@@ -131,7 +125,7 @@ public abstract class MeleeAttack extends AttackEffect {
     @Override
     public boolean hit(Fixture contactFixture) {
         new EnemyDeathVisual(getBody().getPosition().x + getPositionOffset().x,
-            getBody().getPosition().y + getPositionOffset().y, animManager, getBody().getWorld());
+            getBody().getPosition().y + getPositionOffset().y, effectManager, animManager, getBody().getWorld());
         if (getBody().getUserData() instanceof Player) {
             Player player = ((Player) getBody().getUserData());
             player.input().incrementMeleeHit();

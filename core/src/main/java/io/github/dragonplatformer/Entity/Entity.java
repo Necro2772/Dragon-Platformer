@@ -16,42 +16,46 @@ import java.util.Map;
 
 public abstract class Entity<T extends EntityState> {
     protected final AnimationManager animManager;
-    protected final Map<T, Animation<TextureRegion>> anims;
+    protected final EffectManager effectManager;
+    protected final Map<T, AnimationWrapper> anims;
     protected final Map<T, List<AnimationEvent>> animEvents;
     private final Body body;
     private final float width;
     private final float height;
     protected T state;
-    protected float stateTime;
-    private int sDirection;
-    private final ArrayList<TimedImpulse> timedImpulses;
+    protected float stateTime = 0;
+    private int sDirection = 1;
+    private final ArrayList<TimedImpulse> timedImpulses = new ArrayList<>();
 
-    private MovementType movementType;
-    private boolean autoMove;
-    private boolean isFlying;
-    private boolean isFloating;
-    private final Vector2 spawnPos;
-    private Vector2 targetPos;
-    private Vector2 targetVel;
-    private float speed;
-    private float startingSpeed;
-    private float acceleration;
+    private MovementType movementType = MovementType.IDLE;
+    private boolean autoMove = true;
+    private boolean isFlying = false;
+    private boolean isFloating = false;
+    private final Vector2 spawnPos = new Vector2();
+    private Vector2 targetPos = new Vector2();
+    private Vector2 targetVel = new Vector2();
+    private float speed = 5;
+    private float startingSpeed = 5;
+    private float acceleration = 30;
     private float turnAcceleration;
-    private final Vector2 damping;
-    private final StaticBodyRayCast staticRayCast;
-    private float spawnDelay;
-    private boolean enabled;
+    private final Vector2 damping = new Vector2(10, 10);
+    private final StaticBodyRayCast staticRayCast = new StaticBodyRayCast();
+    private float spawnDelay = 0;
+    private boolean enabled = true;
+    private float hitStunTimer = 0;
+    private final Vector2 bufferedVelocity = new Vector2();
+    private boolean visible = true;
 
-    public Entity(float x, float y, float width, float height, Map<T, Animation<TextureRegion>> anims,
-                  Map<T, List<AnimationEvent>> animEvents, AnimationManager animManager, World world) {
+    public Entity(float x, float y, float width, float height, Map<T, AnimationWrapper> anims,
+                  Map<T, List<AnimationEvent>> animEvents, EffectManager effectManager, AnimationManager animManager,
+                  World world) {
         this.animManager = animManager;
+        this.effectManager = effectManager;
         this.anims = anims;
         this.animEvents = animEvents;
         this.height = height;
         this.width = width;
-        stateTime = 0;
-        timedImpulses = new ArrayList<>();
-        setSpriteDirection(1);
+
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;
         bodyDef.fixedRotation = true;
@@ -59,46 +63,21 @@ public abstract class Entity<T extends EntityState> {
         this.body = world.createBody(bodyDef);
         getBody().setUserData(this);
 
-        setMovementType(MovementType.IDLE);
-        setAutoMove(true);
-        setFlying(false);
-        setFloating(false);
-        spawnPos = new Vector2(x, y);
-        targetPos = new Vector2();
-        targetVel = new Vector2();
-        setSpeed(5);
-        startingSpeed = speed;
-        setAcceleration(30);
-        damping = new Vector2(30, 60);
-        staticRayCast = new StaticBodyRayCast();
-        spawnDelay = 0;
-        enabled = true;
+        spawnPos.set(x, y);
     }
 
-    public Entity(float width, float height, Map<T, Animation<TextureRegion>> anims,
-                  Map<T, List<AnimationEvent>> animEvents, AnimationManager animManager, Body body) {
+    public Entity(float width, float height, Map<T, AnimationWrapper> anims,
+                  Map<T, List<AnimationEvent>> animEvents, EffectManager effectManager, AnimationManager animManager,
+                  Body body) {
         this.animManager = animManager;
+        this.effectManager = effectManager;
         this.anims = anims;
         this.animEvents = animEvents;
         this.height = height;
         this.width = width;
-        setSpriteDirection(1);
         this.body = body;
-        timedImpulses = new ArrayList<>();
 
-        setMovementType(MovementType.IDLE);
-        setAutoMove(true);
-        setFlying(false);
-        setFloating(false);
-        spawnPos = new Vector2(body.getPosition());
-        targetPos = new Vector2();
-        setSpeed(0);
-        startingSpeed = speed;
-        setAcceleration(30);
-        damping = new Vector2(10, 10);
-        staticRayCast = new StaticBodyRayCast();
-        spawnDelay = 0;
-        enabled = true;
+        spawnPos.set(body.getPosition());
     }
 
     public void init() {
@@ -109,6 +88,7 @@ public abstract class Entity<T extends EntityState> {
     public void act(float delta) {
         if (enabled) {
             movementUpdate(delta);
+            updateAnimationFlags(delta);
             stateTime += delta;
             for(TimedImpulse timedImpulse : timedImpulses) {
                 applyWeightedImpulse(timedImpulse.getImpulse(delta));
@@ -254,15 +234,17 @@ public abstract class Entity<T extends EntityState> {
     }
 
     public void draw(SpriteBatch batch, float delta) {
-        if (!enabled) return;
+        if (!enabled || !visible) return;
         try {
             TextureRegion frame = anims.get(getState()).getKeyFrame(getStateTime());
             batch.draw(frame,
-                getPosition().x - getWidth() / 2f,
-                getPosition().y - getHeight() / 2f,
-                getWidth() / 2f, getHeight() / 2f, getWidth(), getHeight(), getSpriteDirection(),
+                getPosition().x - (frame.getRegionWidth() / 2f + anims.get(getState()).getOffset().x) / 32f,
+                getPosition().y - (frame.getRegionHeight() / 2f + anims.get(getState()).getOffset().y) / 32f,
+                (frame.getRegionWidth() / 2f + anims.get(getState()).getOffset().x) / 32f,
+                (frame.getRegionHeight() / 2f + anims.get(getState()).getOffset().y) / 32f,
+                frame.getRegionWidth() / 32f, frame.getRegionHeight() / 32f, getSpriteDirection(),
                 1, 0);
-        } catch (NullPointerException e) {
+        } catch (Exception e) {
             if (getState() == null) System.err.printf("Null state on object [%s]%n", getClass());
             else System.err.printf("Couldn't find animation for state [%s] of object [%s]%n",
                 getState().name(), getClass());
@@ -278,6 +260,10 @@ public abstract class Entity<T extends EntityState> {
                 2, Color.YELLOW, projectionMatrix
             );
         }
+    }
+
+    public void setVisible(boolean isVisible) {
+        this.visible = isVisible;
     }
 
     private static class StaticBodyRayCast implements RayCastCallback {
@@ -318,7 +304,7 @@ public abstract class Entity<T extends EntityState> {
      * @param state to transition to
      */
     public void setState(T state) {
-        endState();
+        if (this.state != null) endState();
         this.state = state;
         stateTime = 0;
         beginState();
@@ -328,7 +314,17 @@ public abstract class Entity<T extends EntityState> {
 
     protected void endState() { }
 
-    protected void updateAnimationFlags(float delta) { }
+    protected void updateAnimationFlags(float delta) {
+        if (animEvents.containsKey(state)) {
+            for (AnimationEvent animEvent : animEvents.get(state)) {
+                if (getStateTime() <= animEvent.time && getStateTime() + delta > animEvent.time) {
+                    onAnimEvent(animEvent);
+                }
+            }
+        }
+    }
+
+    protected void onAnimEvent(AnimationEvent animEvent) { }
 
     public abstract void beginContact(Fixture entityFixture, Fixture contactFixture);
 
@@ -372,7 +368,7 @@ public abstract class Entity<T extends EntityState> {
         return stateTime;
     }
 
-    public Animation<TextureRegion> getCurrentAnim() {
+    public AnimationWrapper getCurrentAnim() {
         return anims.get(getState());
     }
 
@@ -576,6 +572,24 @@ public abstract class Entity<T extends EntityState> {
 
     public Vector2 damping() {
         return damping;
+    }
+
+    public void setHitStunTimer(float hitStunTime) {
+        this.hitStunTimer = hitStunTime;
+    }
+
+    public void updateHitStun(float delta) {
+        hitStunTimer -= delta;
+        bufferedVelocity.add(getBody().getLinearVelocity());
+        applyWeightedImpulse(getBody().getLinearVelocity().scl(-1));
+        if (!isHitStunned()) {
+            applyWeightedImpulse(bufferedVelocity);
+            bufferedVelocity.set(0, 0);
+        }
+    }
+
+    public boolean isHitStunned() {
+        return hitStunTimer > 0;
     }
 
     private static class TimedImpulse {

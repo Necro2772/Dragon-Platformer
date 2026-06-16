@@ -5,6 +5,7 @@ import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.Actor.Player.Player;
 import io.github.dragonplatformer.Entity.Effect.Effect;
+import io.github.dragonplatformer.Entity.EffectManager;
 import io.github.dragonplatformer.GameContactListener;
 import io.github.dragonplatformer.GameScreen;
 
@@ -12,8 +13,9 @@ public class Portal extends Effect {
     public final String destination;
     public final GameScreen screen;
 
-    public Portal(float x, float y, float width, float height, AnimationManager animManager, World world, String destination, GameScreen screen) {
-        super(x, y, width, height, AnimationKey.EFFECT_ENEMYDEATH, animManager, world);
+    public Portal(float x, float y, float width, float height, EffectManager effectManager,
+                  AnimationManager animManager, World world, String destination, GameScreen screen) {
+        super(x, y, width, height, AnimationKey.EFFECT_ENEMYDEATH, effectManager, animManager, world);
         getBody().setType(BodyDef.BodyType.StaticBody);
         this.destination = destination;
         this.screen = screen;

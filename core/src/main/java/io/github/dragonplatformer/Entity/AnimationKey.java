@@ -1,11 +1,13 @@
 package io.github.dragonplatformer.Entity;
 
 public enum AnimationKey {
-    PLAYER,
+    PLAYER_FIREDRAGON,
     ENEMY_LIZARD,
     ENEMY_BAT,
     ENEMY_SPIKYLIZARD,
     ENEMY_MANTICORE,
+    ENEMY_GARGOYLE,
+    ENEMY_WYVERN,
     EFFECT_FIREBALL,
     EFFECT_EXPLOSION,
     EFFECT_CLAWSWIPE,

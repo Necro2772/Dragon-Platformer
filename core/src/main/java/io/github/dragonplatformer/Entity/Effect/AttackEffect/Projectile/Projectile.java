@@ -8,34 +8,30 @@ import io.github.dragonplatformer.Entity.Actor.Actor;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.AttackEffect;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.MeleeAttack;
 import io.github.dragonplatformer.Entity.Effect.EffectState;
+import io.github.dragonplatformer.Entity.EffectManager;
 import io.github.dragonplatformer.GameContactListener;
 
 public abstract class Projectile extends AttackEffect {
     private float health;
     private float lifetime;
-    private final FixtureDef bodyFixtureDef;
-    private FixtureDef damageFixtureDef;
+    private final FixtureDef bodyFixtureDef = new FixtureDef();
+    private FixtureDef damageFixtureDef = null;
     private Shape bodyFixtureShape;
-    private boolean reflectOnStatic;
-    private boolean destroyOnStatic;
+    private boolean reflectOnStatic = false;
+    private boolean destroyOnStatic = true;
     private float restitution;
-    private boolean destroyOnEnemy;
+    private boolean destroyOnEnemy = true;
     private final boolean isPlayer;
 
     public Projectile(float damage, float knockback, float health, float lifetime, float x, float y,
-                      float width, float height, AnimationKey animKey, AnimationManager animManager,
-                      boolean isPlayer, World world) {
-        super(damage, knockback, x, y, width, height, animKey, animManager, world);
+                      float width, float height, AnimationKey animKey, EffectManager effectManager,
+                      AnimationManager animManager, boolean isPlayer, World world) {
+        super(damage, knockback, x, y, width, height, animKey, effectManager, animManager, world);
         this.health = health;
         this.lifetime = lifetime;
-        this.destroyOnStatic = true;
-        this.reflectOnStatic = false;
-        this.destroyOnEnemy = true;
         this.isPlayer = isPlayer;
-        bodyFixtureDef = new FixtureDef();
-        damageFixtureDef = null;
-        PolygonShape bodyFixtureShape = new PolygonShape();
-        bodyFixtureShape.setAsBox(getWidth() / 2f, getHeight() / 2f, new Vector2(), 0);
+        bodyFixtureShape = new PolygonShape();
+        ((PolygonShape) bodyFixtureShape).setAsBox(getWidth() / 2f, getHeight() / 2f, new Vector2(), 0);
     }
 
     @Override
@@ -81,6 +77,7 @@ public abstract class Projectile extends AttackEffect {
     }
 
     public void setCollisionAsCircle(float radius, Vector2 center) {
+        bodyFixtureShape.dispose();
         bodyFixtureShape = new CircleShape();
         bodyFixtureShape.setRadius(radius);
         ((CircleShape) bodyFixtureShape).setPosition(center);

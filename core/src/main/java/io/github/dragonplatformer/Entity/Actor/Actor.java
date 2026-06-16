@@ -4,10 +4,7 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
-import io.github.dragonplatformer.Entity.AnimationEvent;
-import io.github.dragonplatformer.Entity.AnimationManager;
-import io.github.dragonplatformer.Entity.Entity;
-import io.github.dragonplatformer.Entity.EntityState;
+import io.github.dragonplatformer.Entity.*;
 import io.github.dragonplatformer.GameContactListener;
 
 import java.util.ArrayList;
@@ -17,35 +14,28 @@ import java.util.Map;
 public abstract class Actor<T extends EntityState> extends Entity<T> {
     private final FixtureDef bodyFixtureDef;
     private final FixtureDef hitboxDef;
-    private int jumpSensorIndex;
-    private int hitboxIndex;
-    private int ragdollIndex;
+    private int jumpSensorIndex = -1;
+    private int hitboxIndex = -1;
+    private int ragdollIndex = -1;
     private Vector2 hitboxSize;
-    private float hitboxRadius;
-    private Vector2 hitboxCenter;
-    private int groundContact;
-    private final ArrayList<Fixture> overlapFixtures;
-    private float hitEffectTimer;
+    private float hitboxRadius = -1;
+    private Vector2 hitboxCenter = new Vector2();
+    private int groundContact = 0;
+    //private final ArrayList<Fixture> overlapFixtures = new ArrayList<>();
+    private float hitEffectTimer = 0;
     private ActorStats stats;
 
-    public Actor(float x, float y, float width, float height, Map<T, Animation<TextureRegion>> anims,
-                 Map<T, List<AnimationEvent>> animEvents, AnimationManager animManager, World world) {
-        super(x, y, width, height, anims, animEvents, animManager, world);
+    public Actor(float x, float y, float width, float height, Map<T, AnimationWrapper> anims,
+                 Map<T, List<AnimationEvent>> animEvents, EffectManager effectManager, AnimationManager animManager,
+                 World world) {
+        super(x, y, width, height, anims, animEvents, effectManager, animManager, world);
         bodyFixtureDef = new FixtureDef();
         bodyFixtureDef.density = 0.5f;
         bodyFixtureDef.friction = 0;
         bodyFixtureDef.filter.maskBits = GameContactListener.FilterBits.STATIC.getBit();
         hitboxSize = new Vector2(width/2, height/2);
-        hitboxRadius = -1;
-        hitboxCenter = new Vector2(0, 0);
         hitboxDef = new FixtureDef();
         hitboxDef.isSensor = true;
-        groundContact = 0;
-        ragdollIndex = -1;
-        jumpSensorIndex = -1;
-        hitboxIndex = -1;
-        overlapFixtures = new ArrayList<>();
-        hitEffectTimer = 0;
     }
 
     @Override
@@ -158,6 +148,7 @@ public abstract class Actor<T extends EntityState> extends Entity<T> {
     public void act(float delta) {
         super.act(delta);
         stats().update(delta);
+        if (hitEffectTimer >= 0) hitEffectTimer -= delta;
 //        if (!overlapFixtures.isEmpty()) {
 //            Vector2 avgPos = new Vector2(getBody().getPosition());
 //            float avgMass = getBody().getMass();
@@ -185,7 +176,6 @@ public abstract class Actor<T extends EntityState> extends Entity<T> {
 //                }
 //            }
 //        }
-        if (hitEffectTimer >= 0) hitEffectTimer -= delta;
     }
 
     public Vector2 getHitboxPosition() {
@@ -197,10 +187,10 @@ public abstract class Actor<T extends EntityState> extends Entity<T> {
         if (getBody().getFixtureList().indexOf(entityFixture, true) == getJumpSensorIndex()) {
             groundContact++;
         }
-        if (getBody().getFixtureList().indexOf(entityFixture, true) == getHitboxIndex()
-            && contactFixture.getUserData() instanceof Actor) {
-            overlapFixtures.add(contactFixture);
-        }
+//        if (getBody().getFixtureList().indexOf(entityFixture, true) == getHitboxIndex()
+//            && contactFixture.getUserData() instanceof Actor) {
+//            overlapFixtures.add(contactFixture);
+//        }
     }
 
     @Override
@@ -208,9 +198,9 @@ public abstract class Actor<T extends EntityState> extends Entity<T> {
         if (getBody().getFixtureList().indexOf(entityFixture, true) == getJumpSensorIndex()) {
             groundContact--;
         }
-        if (getBody().getFixtureList().indexOf(entityFixture, true) == getHitboxIndex()) {
-            overlapFixtures.remove(contactFixture);
-        }
+//        if (getBody().getFixtureList().indexOf(entityFixture, true) == getHitboxIndex()) {
+//            overlapFixtures.remove(contactFixture);
+//        }
     }
 
     public boolean isGrounded() {
@@ -220,18 +210,19 @@ public abstract class Actor<T extends EntityState> extends Entity<T> {
     public boolean damage(float attackDamage, Vector2 attackOrigin, float knockback, Fixture entityFixture) {
         if (!stats().isInvulnerable()) {
             stats().setHealth(stats().getHealth() - attackDamage);
-            getBody().applyLinearImpulse(getBody().getLinearVelocity().scl(-1), getBody().getPosition(), true);
-            if (attackOrigin.x - getBody().getPosition().x < 0) {
-                getBody().applyLinearImpulse(
-                    new Vector2(knockback, knockback).add(getBody().getLinearVelocity().scl(-2)),
-                    getBody().getPosition(), true
-                );
-            } else {
-                getBody().applyLinearImpulse(
-                    new Vector2(-knockback, knockback).add(getBody().getLinearVelocity().scl(-2)),
-                    getBody().getPosition(), true
-                );
-            }
+            getBody().applyLinearImpulse(getPosition().sub(attackOrigin).setLength(knockback), getCenter(), true);
+//            getBody().applyLinearImpulse(getBody().getLinearVelocity().scl(-1), getBody().getPosition(), true);
+//            if (attackOrigin.x - getBody().getPosition().x < 0) {
+//                getBody().applyLinearImpulse(
+//                    new Vector2(knockback, knockback).add(getBody().getLinearVelocity().scl(-2)),
+//                    getBody().getPosition(), true
+//                );
+//            } else {
+//                getBody().applyLinearImpulse(
+//                    new Vector2(-knockback, knockback).add(getBody().getLinearVelocity().scl(-2)),
+//                    getBody().getPosition(), true
+//                );
+//            }
             startHitVisuals();
             return true;
         }

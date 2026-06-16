@@ -52,6 +52,8 @@ public class PlayerStats extends ActorStats {
     public float recoilAttackDiveY = 5;
     public float recoilAttackSoarY = 5;
 
+    public float fireballLargeRecoil = 10;
+
     public float groundDampingX = 100;
     public float flyDampingX = 10;
     public float flyDampingY = 10;
