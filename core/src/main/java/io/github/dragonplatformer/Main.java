@@ -28,7 +28,7 @@ public class Main extends Game {
     public AssetManager manager;
     public LoadScreen currentLevel;
     public CharacterStatsScreen statsScreen;
-    public Screen currentScreen;
+    public GameScreen currentScreen;
     public PlayerStats playerStats;
 
     @Override

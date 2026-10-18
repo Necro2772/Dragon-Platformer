@@ -67,7 +67,6 @@ public class GameScreen implements Screen {
 
     // Physics Rendering
     private float timeAccumulator = 0;
-    private float timeStep = 1f/60;
 
     public GameScreen(final Main game, final TiledMap map) {
         this.game = game;
@@ -76,6 +75,7 @@ public class GameScreen implements Screen {
         animManager = new AnimationManager(atlas);
         effectManager = new EffectManager(atlas);
         world = new World(new Vector2(0, -9.8f), true);
+        world.setAutoClearForces(false);
         if (game.batch == null) { // for headless application tests
             this.map = map;
             tiledMapRenderer = null;
@@ -388,12 +388,15 @@ public class GameScreen implements Screen {
         uiStage.act(delta);
         draw(delta);
         debugRenderer.render(world, game.viewport.getCamera().combined);
-        // TODO: test for different frame rates!
-        timeAccumulator += delta;
-        while (timeAccumulator > timeStep) {
+
+        // Step time while accounting for differing frame rates
+        timeAccumulator += Math.min(delta, 0.25f);
+        float timeStep = 1f/60;
+        while (timeAccumulator >= timeStep) {
             world.step(timeStep, 6, 2);
             timeAccumulator -= timeStep;
         }
+        world.clearForces();
     }
 
     public void changeLevel(String level) {
@@ -473,7 +476,7 @@ public class GameScreen implements Screen {
         }
     }
 
-    private void draw(float delta) {
+    public void draw(float delta) {
         tiledMapRenderer.setView((OrthographicCamera) game.viewport.getCamera());
         ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
         game.viewport.apply();

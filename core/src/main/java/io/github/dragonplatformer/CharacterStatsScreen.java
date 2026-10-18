@@ -40,7 +40,7 @@ public class CharacterStatsScreen implements Screen {
         Image background = new Image();
         background.setFillParent(true);
         uiTable.addActor(background);
-        Label tabLabel = new Label("Stats", skin);
+        Label tabLabel = new Label("Paused", skin);
         tabLabel.setAlignment(Align.center);
         uiTable.pad(10).top();
         uiTable.add(tabLabel).size(Value.percentWidth(0.5f, uiTable), Value.percentHeight(0.1f, uiTable)).center();
@@ -58,6 +58,7 @@ public class CharacterStatsScreen implements Screen {
 
     @Override
     public void render(float delta) {
+        game.currentScreen.draw(delta);
         uiStage.act(delta);
         uiStage.draw();
     }
@@ -65,6 +66,8 @@ public class CharacterStatsScreen implements Screen {
     @Override
     public void resize(int width, int height) {
         uiStage.getViewport().update(width, height, true);
+        game.viewport.update(width, height);
+        game.currentScreen.resize(width, height);
     }
 
     @Override
