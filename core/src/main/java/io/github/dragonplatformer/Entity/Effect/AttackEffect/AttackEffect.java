@@ -109,7 +109,8 @@ public abstract class AttackEffect extends Effect {
         if (contactFixture.getBody().getUserData() instanceof Actor) {
             Actor<?> actor = ((Actor<?>) contactFixture.getBody().getUserData());
             if (!actor.stats().getHitGroupInvul(getHitGroup())) {
-                if (actor.damage(getDamage(), getPosition(), getKnockback(), contactFixture)) {
+                if (actor.getBody().getFixtureList().get(actor.getHitboxIndex()) == contactFixture
+                    && actor.damage(getDamage(), getPosition(), getKnockback(), contactFixture)) {
                     ((Entity<?>) getBody().getUserData()).setHitStunTimer(getHitStun());
                     actor.setHitStunTimer(getHitStun());
                     actor.stats().addHitGroupInvul(getHitGroup(), getHitGroupCD());

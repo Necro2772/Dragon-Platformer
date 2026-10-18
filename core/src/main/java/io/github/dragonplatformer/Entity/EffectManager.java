@@ -7,77 +7,106 @@ import com.badlogic.gdx.graphics.g2d.ParticleEffectPool.PooledEffect;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Pool;
 
 public class EffectManager {
+    private final ParticleEffectPool glideAttackPool;
+    private final ParticleEffectPool meleeHitPool;
+    private final ParticleEffectPool neutralMeleePool;
+
     private final ParticleEffectPool chargeFirePool;
     private final ParticleEffectPool chargeFirePlayerPool;
     private final ParticleEffectPool fireballPool;
     private final ParticleEffectPool fireballMediumPool;
     private final ParticleEffectPool fireballHitPool;
     private final ParticleEffectPool explosionPool;
-    private final ParticleEffectPool meleeHitPool;
+    private final ParticleEffectPool fireMeleePool;
+
+    private final ParticleEffectPool iceSpikePool;
+    private final ParticleEffectPool chargeIcePlayerPool;
+    private final ParticleEffectPool iceSpikeHitPool;
+    private final ParticleEffectPool iceGlidePool;
+    private final ParticleEffectPool iceExplosionPool;
+
+    private final ParticleEffectPool earthMeleePool;
+    private final ParticleEffectPool earthGlideAttackPool;
+
+    private final ParticleEffectPool windVortexPool;
+
     private final ParticleEffectPool enemyDeathPool;
     private final ParticleEffectPool glidePool;
     private final ParticleEffectPool flapWindPool;
     private final ParticleEffectPool projectileShootPool;
+    private final ParticleEffectPool portalPool;
+
     private final Array<PooledEffect> effects;
 
     public EffectManager(TextureAtlas atlas) {
-        ParticleEffect chargeFire = new ParticleEffect();
-        ParticleEffect chargeFirePlayer = new ParticleEffect();
-        ParticleEffect fireball = new ParticleEffect();
-        ParticleEffect fireballHit = new ParticleEffect();
-        ParticleEffect fireballMedium = new ParticleEffect();
-        ParticleEffect explosion = new ParticleEffect();
-        ParticleEffect meleeHit = new ParticleEffect();
-        ParticleEffect enemyDeath = new ParticleEffect();
-        ParticleEffect glide = new ParticleEffect();
-        ParticleEffect flapWind = new ParticleEffect();
-        ParticleEffect projectileShoot = new ParticleEffect();
+        neutralMeleePool = initPool("meleeneutral.p", atlas, 1, 5);
 
-        chargeFire.load(Gdx.files.internal("particles/chargefire.p"), atlas);
-        chargeFirePlayer.load(Gdx.files.internal("particles/chargefireplayer.p"), atlas);
-        fireball.load(Gdx.files.internal("particles/fireballsmall.p"), atlas);
-        fireballHit.load(Gdx.files.internal("particles/fireballhit.p"), atlas);
-        fireballMedium.load(Gdx.files.internal("particles/fireballmedium.p"), atlas);
-        meleeHit.load(Gdx.files.internal("particles/meleehit.p"), atlas);
-        enemyDeath.load(Gdx.files.internal("particles/enemydeath.p"), atlas);
-        explosion.load(Gdx.files.internal("particles/explosion.p"), atlas);
-        glide.load(Gdx.files.internal("particles/glidewind.p"), atlas);
-        flapWind.load(Gdx.files.internal("particles/flapwind.p"), atlas);
-        projectileShoot.load(Gdx.files.internal("particles/projectileshoot.p"), atlas);
+        chargeFirePool =  initPool("chargefire.p", atlas, 10, 20);
+        chargeFirePlayerPool = initPool("chargefireplayer.p", atlas, 1, 2);
+        fireballPool = initPool("fireballsmall.p", atlas, 10, 20);
+        fireballHitPool = initPool("fireballhit.p", atlas, 10, 20);
+        fireballMediumPool = initPool("fireballmedium.p", atlas, 5, 10);
+        explosionPool = initPool("explosion.p", atlas, 5, 10);
+        fireMeleePool = initPool("firemelee.p", atlas, 1, 5);
 
-        chargeFire.setEmittersCleanUpBlendFunction(false);
-        chargeFirePlayer.setEmittersCleanUpBlendFunction(false);
-        fireball.setEmittersCleanUpBlendFunction(false);
-        fireballHit.setEmittersCleanUpBlendFunction(false);
-        fireballMedium.setEmittersCleanUpBlendFunction(false);
-        explosion.setEmittersCleanUpBlendFunction(false);
-        meleeHit.setEmittersCleanUpBlendFunction(false);
-        enemyDeath.setEmittersCleanUpBlendFunction(false);
-        glide.setEmittersCleanUpBlendFunction(false);
-        flapWind.setEmittersCleanUpBlendFunction(false);
-        projectileShoot.setEmittersCleanUpBlendFunction(false);
+        chargeIcePlayerPool = initPool("chargeiceplayer.p", atlas, 1, 3);
+        iceSpikePool = initPool("icespike.p", atlas, 5, 10);
+        iceSpikeHitPool = initPool("icespikehit.p", atlas, 5, 10);
+        iceGlidePool = initPool("iceglideattack.p", atlas, 1, 5);
+        iceExplosionPool = initPool("iceexplosion.p", atlas, 5, 10);
 
-        chargeFirePool =  new ParticleEffectPool(chargeFire, 10, 20);
-        chargeFirePlayerPool = new ParticleEffectPool(chargeFirePlayer, 1, 2);
-        fireballPool = new ParticleEffectPool(fireball, 10, 20);
-        fireballHitPool = new ParticleEffectPool(fireballHit, 10, 20);
-        fireballMediumPool = new ParticleEffectPool(fireballMedium, 5, 10);
-        explosionPool = new ParticleEffectPool(explosion, 5, 10);
-        meleeHitPool = new ParticleEffectPool(meleeHit, 10, 20);
-        enemyDeathPool = new ParticleEffectPool(enemyDeath, 5, 10);
-        glidePool = new ParticleEffectPool(glide, 1, 2);
-        flapWindPool = new ParticleEffectPool(flapWind, 2, 10);
-        projectileShootPool = new ParticleEffectPool(projectileShoot, 2, 5);
+        earthMeleePool = initPool("earthmelee.p", atlas, 1, 3);
+        earthGlideAttackPool = initPool("earthglideattack.p", atlas, 1, 3);
+
+        windVortexPool = initPool("windvortex.p", atlas, 5, 10);
+
+        glideAttackPool = initPool("glideattack.p", atlas, 1, 3);
+        meleeHitPool = initPool("meleehit.p", atlas, 10, 20);
+        enemyDeathPool = initPool("enemydeath.p", atlas, 5, 10);
+        glidePool = initPool("glidewind.p", atlas, 1, 2);
+        flapWindPool = initPool("flapwind.p", atlas, 2, 10);
+        projectileShootPool = initPool("projectileshoot.p", atlas, 2, 5);
+        portalPool = initPool("portal.p", atlas, 2, 5);
         effects = new Array<>();
+    }
+
+    private ParticleEffectPool initPool(String filename, TextureAtlas atlas, int initialCapacity, int maxCapacity) {
+        ParticleEffect effect = new ParticleEffect();
+        effect.load(Gdx.files.internal("particles/" + filename), atlas);
+        effect.setEmittersCleanUpBlendFunction(false);
+        return new ParticleEffectPool(effect, initialCapacity, maxCapacity);
     }
 
     private PooledEffect obtainEffect(ParticleEffectPool pool) {
         PooledEffect effect = pool.obtain();
         effects.add(effect);
         return effect;
+    }
+
+    public PooledEffect obtainPortal() {
+        return obtainEffect(portalPool);
+    }
+
+    public PooledEffect obtainWindVortex() {
+        return obtainEffect(windVortexPool);
+    }
+
+    public PooledEffect obtainEarthMelee() {
+        return obtainEffect(earthMeleePool);
+    }
+
+    public PooledEffect obtainEarthGlideAttack() {
+        return obtainEffect(earthGlideAttackPool);
+    }
+
+    public PooledEffect obtainNeutralMelee() {
+        return obtainEffect(neutralMeleePool);
+    }
+
+    public PooledEffect obtainFireMelee() {
+        return obtainEffect(fireMeleePool);
     }
 
     public PooledEffect obtainChargeFire() {
@@ -104,6 +133,30 @@ public class EffectManager {
         return obtainEffect(explosionPool);
     }
 
+    public PooledEffect obtainChargeIcePlayer() {
+        return obtainEffect(chargeIcePlayerPool);
+    }
+
+    public PooledEffect obtainIceSpike() {
+        return obtainEffect(iceSpikePool);
+    }
+
+    public PooledEffect obtainIceSpikeHit() {
+        return obtainEffect(iceSpikeHitPool);
+    }
+
+    public PooledEffect obtainIceGlide() {
+        return obtainEffect(iceGlidePool);
+    }
+
+    public PooledEffect obtainIceExplosion() {
+        return obtainEffect(iceExplosionPool);
+    }
+
+    public PooledEffect obtainGlideAttack() {
+        return obtainEffect(glideAttackPool);
+    }
+
     public PooledEffect obtainMeleeHit() {
         return obtainEffect(meleeHitPool);
     }
@@ -124,11 +177,6 @@ public class EffectManager {
         return obtainEffect(projectileShootPool);
     }
 
-    public void endEffect(ParticleEffect effect) {
-        effects.removeValue((PooledEffect) effect, true);
-        ((PooledEffect) effect).free();
-    }
-
     public void draw(SpriteBatch batch, float delta) {
         for (int i = effects.size - 1; i >= 0; i--) {
             PooledEffect effect = effects.get(i);
@@ -140,10 +188,11 @@ public class EffectManager {
         }
     }
 
-    public void resetAll() {
+    public void endAll() {
         for (int i = effects.size; i >= 0; i--) {
             effects.get(i).free();
         }
         effects.clear();
     }
+
 }

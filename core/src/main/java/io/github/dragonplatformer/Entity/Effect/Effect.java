@@ -36,7 +36,7 @@ public abstract class Effect extends Entity<EffectState> {
     @Override
     public void act(float delta) {
         super.act(delta);
-        if (getState() == EffectState.DESTROYED && anims.get(getState()).isAnimationFinished(getStateTime())) {
+        if (!anims.containsKey(getState()) || (getState() == EffectState.DESTROYED && anims.get(getState()).isAnimationFinished(getStateTime()))) {
             destroy();
         } else if (anims.get(getState()).getPlayMode() == Animation.PlayMode.NORMAL
             && anims.get(getState()).isAnimationFinished(getStateTime())) {
@@ -44,12 +44,13 @@ public abstract class Effect extends Entity<EffectState> {
         }
     }
 
+    public void destroySafe() {
+        setState(EffectState.DESTROYED);
+    }
+
     @Override
     protected void beginState() {
         super.beginState();
-        if (getState() == EffectState.DESTROYED) {
-            if (!anims.containsKey(getState())) destroy();
-        }
     }
 
     public boolean isDisjointFixture() {

@@ -8,7 +8,7 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import io.github.dragonplatformer.Entity.Actor.Player.Player;
-import io.github.dragonplatformer.GameScreen;
+import io.github.dragonplatformer.Screen.GameScreen;
 import io.github.dragonplatformer.Main;
 
 public class GameHeadlessApplication extends Main {

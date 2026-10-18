@@ -9,6 +9,8 @@ public class ActorStats {
     public float invulnerability;
     public final Map<Integer, Float> hitMap;
     public boolean intangible;
+    private float slowed = 0;
+    private float slowEffect = 0.8f;
 
     public ActorStats() {
         setMaxHealth(1);
@@ -27,6 +29,7 @@ public class ActorStats {
 
     public void update(float delta) {
         if (isInvulnerable()) setInvulnerable(invulnerability - delta);
+        if (isSlowed()) slowed -= delta;
         for (int group : hitMap.keySet()) {
             if (hitMap.get(group) - delta < 0) hitMap.remove(group);
             else hitMap.replace(group, hitMap.get(group) - delta);
@@ -64,5 +67,21 @@ public class ActorStats {
 
     public boolean isIntangible() {
         return intangible;
+    }
+
+    public void slow(float duration) {
+        this.slowed = Math.max(this.slowed, duration);
+    }
+
+    public boolean isSlowed() {
+        return slowed > 0;
+    }
+
+    public float getSlowEffect() {
+        return slowEffect;
+    }
+
+    public void setSlowEffect(float slowEffect) {
+        this.slowEffect = slowEffect;
     }
 }

@@ -3,6 +3,7 @@ package io.github.dragonplatformer.Entity;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.utils.Array;
 import io.github.dragonplatformer.Entity.Actor.Enemy.EnemyState;
 import io.github.dragonplatformer.Entity.Actor.Player.PlayerState;
 import io.github.dragonplatformer.Entity.Effect.EffectState;
@@ -80,76 +81,94 @@ public class AnimationManager {
                     PlayerState.EVADE, new AnimationWrapper(
                         0.75f / 15,
                         atlas.findRegions(skinName + "evade"),
-                        Animation.PlayMode.NORMAL
+                        Animation.PlayMode.LOOP
                     )
                 ), Map.entry(
                     PlayerState.EVADE_HORIZONTAL, new AnimationWrapper(
-                        0.5f / 10,
+                        0.3f / 10,
                         atlas.findRegions(skinName + "evadeforward"),
                         Animation.PlayMode.NORMAL
                     )
                 ), Map.entry(
                     PlayerState.EVADE_UP, new AnimationWrapper(
-                        1/20f,
+                        0.3f / 10,
                         atlas.findRegions(skinName + "evadeup"),
                         Animation.PlayMode.NORMAL
                     )
                 ), Map.entry(
                     PlayerState.EVADE_DOWN, new AnimationWrapper(
-                        1/20f,
+                        0.30f / 10,
                         atlas.findRegions(skinName + "evadedown"),
                         Animation.PlayMode.NORMAL
                     )
                 ), Map.entry(
                     PlayerState.ATTACK_FORWARD1, new AnimationWrapper(
-                        1/20f,
+                        0.30f / 8,
                         atlas.findRegions(skinName + "attackforward"),
                         Animation.PlayMode.NORMAL,
                         new Vector2(-32, 0)
                     )
                 ), Map.entry(
                     PlayerState.ATTACK_FORWARD2, new AnimationWrapper(
-                        1/20f,
+                        0.30f / 8,
                         atlas.findRegions(skinName + "attackforward2"),
                         Animation.PlayMode.NORMAL,
                         new Vector2(-32, 0)
                     )
                 ), Map.entry(
                     PlayerState.ATTACK_UP, new AnimationWrapper(
-                        1/20f,
+                        0.40f / 10,
                         atlas.findRegions(skinName + "attackup"),
                         Animation.PlayMode.NORMAL,
                         new Vector2(0, -32)
                     )
                 ), Map.entry(
                     PlayerState.ATTACK_DOWN, new AnimationWrapper(
-                        1/20f,
+                        0.40f / 10,
                         atlas.findRegions(skinName + "attackdown"),
                         Animation.PlayMode.NORMAL,
                         new Vector2(0, 32)
                     )
                 ), Map.entry(
                     PlayerState.ATTACK_GLIDE, new AnimationWrapper(
-                        0.75f / 14,
+                        0.70f / 14,
                         atlas.findRegions(skinName + "glideattack"),
                         Animation.PlayMode.NORMAL
                     )
                 ), Map.entry(
                     PlayerState.ATTACK_SOAR, new AnimationWrapper(
-                        0.5f / 14,
-                        atlas.findRegions(skinName + "glideattack"),
+                        0.70f / 14,
+                        atlas.findRegions(skinName + "soarattack"),
                         Animation.PlayMode.NORMAL
                     )
                 ), Map.entry(
                     PlayerState.ATTACK_DIVE, new AnimationWrapper(
-                        0.5f / 14,
-                        atlas.findRegions(skinName + "glideattack"),
+                        0.70f / 14,
+                        atlas.findRegions(skinName + "diveattack"),
                         Animation.PlayMode.NORMAL
                     )
                 ), Map.entry(
-                    PlayerState.ATTACK_DIVE_LAND, new AnimationWrapper(
-                        0.33f / 8,
-                        atlas.findRegions(skinName + "attackforward"),
+                    PlayerState.GLIDE_SOAR_TRANSITION, new AnimationWrapper(
+                        0.05f,
+                        atlas.findRegions(skinName + "glide_soar_transition"),
+                        Animation.PlayMode.NORMAL
+                    )
+                ), Map.entry(
+                    PlayerState.SOAR_GLIDE_TRANSITION, new AnimationWrapper(
+                        0.05f,
+                        atlas.findRegions(skinName + "soar_glide_transition"),
+                        Animation.PlayMode.NORMAL
+                    )
+                ), Map.entry(
+                    PlayerState.GLIDE_DIVE_TRANSITION, new AnimationWrapper(
+                        0.05f,
+                        atlas.findRegions(skinName + "glide_dive_transition"),
+                        Animation.PlayMode.NORMAL
+                    )
+                ), Map.entry(
+                    PlayerState.DIVE_GLIDE_TRANSITION, new AnimationWrapper(
+                        0.05f,
+                        atlas.findRegions(skinName + "dive_glide_transition"),
                         Animation.PlayMode.NORMAL
                     )
                 ), Map.entry(
@@ -168,7 +187,7 @@ public class AnimationManager {
                     )
                 ), Map.entry(
                     PlayerState.DEATH, new AnimationWrapper(
-                        1/2f,
+                        1/20f,
                         atlas.findRegions(skinName + "flap"),
                         Animation.PlayMode.NORMAL
                     )
@@ -181,28 +200,19 @@ public class AnimationManager {
     public Map<PlayerState, List<AnimationEvent>> getPlayerAnimEvents() {
         if (playerAnimationEvents.isEmpty()) {
             playerAnimationEvents.putAll(Map.ofEntries(
-                Map.entry(PlayerState.EVADE, Arrays.asList(
-                    new AnimationEvent(0f, AnimationEventKey.evadestart),
-                    new AnimationEvent(0.4f, AnimationEventKey.evadeend)
-                )), Map.entry(PlayerState.EVADE_HORIZONTAL, Arrays.asList(
-                    new AnimationEvent(0f, AnimationEventKey.iframestart),
-                    new AnimationEvent(0.2f, AnimationEventKey.iframeend)
-                )), Map.entry(PlayerState.EVADE_UP, Arrays.asList(
-                    new AnimationEvent(0f, AnimationEventKey.iframestart),
-                    new AnimationEvent(0f, AnimationEventKey.iframestart),
-                    new AnimationEvent(0.2f, AnimationEventKey.iframeend)
-                )), Map.entry(PlayerState.EVADE_DOWN, Arrays.asList(
-                    new AnimationEvent(0f, AnimationEventKey.iframestart),
-                    new AnimationEvent(0.2f, AnimationEventKey.iframeend)
-                )), Map.entry(PlayerState.ATTACK_FORWARD1, List.of(
-                    new AnimationEvent(0.2f, AnimationEventKey.hitframe)
-                )), Map.entry(PlayerState.ATTACK_FORWARD2, List.of(
-                    new AnimationEvent(0.2f, AnimationEventKey.hitframe)
-                )), Map.entry(PlayerState.ATTACK_GROUND1, List.of(
-                    new AnimationEvent(0.2f, AnimationEventKey.hitframe)
-                )), Map.entry(PlayerState.ATTACK_GROUND2, List.of(
-                    new AnimationEvent(0.2f, AnimationEventKey.hitframe)
-                ))
+//                Map.entry(PlayerState.EVADE, Arrays.asList(
+//                    new AnimationEvent(0f, AnimationEventKey.evadestart),
+//                    new AnimationEvent(0.4f, AnimationEventKey.evadeend)
+//                )), Map.entry(PlayerState.EVADE_HORIZONTAL, Arrays.asList(
+//                    new AnimationEvent(0f, AnimationEventKey.iframestart),
+//                    new AnimationEvent(0.4f, AnimationEventKey.iframeend)
+//                )), Map.entry(PlayerState.EVADE_UP, Arrays.asList(
+//                    new AnimationEvent(0f, AnimationEventKey.iframestart),
+//                    new AnimationEvent(0.4f, AnimationEventKey.iframeend)
+//                )), Map.entry(PlayerState.EVADE_DOWN, Arrays.asList(
+//                    new AnimationEvent(0f, AnimationEventKey.iframestart),
+//                    new AnimationEvent(0.4f, AnimationEventKey.iframeend)
+//                ))
             ));
         }
         return playerAnimationEvents;
@@ -323,8 +333,8 @@ public class AnimationManager {
                             Animation.PlayMode.LOOP
                         )),
                         Map.entry(EnemyState.ATTACK, new AnimationWrapper(
-                            1.0f / 4,
-                            atlas.findRegions("wyvern-projectile"),
+                            1.5f / 14,
+                            atlas.findRegions("wyvern_projectile"),
                             Animation.PlayMode.NORMAL
                         ))
                     ));
@@ -341,7 +351,7 @@ public class AnimationManager {
                 case ENEMY_WYVERN:
                     enemyAnimationEvents.put(key, Map.ofEntries(
                         Map.entry(EnemyState.ATTACK, List.of(
-                            new AnimationEvent(0.5f, AnimationEventKey.hitframe)
+                            new AnimationEvent(0.75f, AnimationEventKey.hitframe)
                         ))
                     ));
                     break;
@@ -411,6 +421,13 @@ public class AnimationManager {
                         1/6f,
                         atlas.findRegions("crystalshard"),
                         Animation.PlayMode.LOOP))
+                    ));
+                    break;
+                case EFFECT_EMPTY:
+                    effectAnimations.put(key, Map.ofEntries(
+                        Map.entry(EffectState.IDLE, new AnimationWrapper(
+                            1, new Array<>(0), Animation.PlayMode.LOOP
+                        ))
                     ));
                     break;
             }

@@ -1,21 +1,23 @@
 package io.github.dragonplatformer.Entity.Effect.Portal;
 
+import com.badlogic.gdx.graphics.g2d.ParticleEffect;
 import com.badlogic.gdx.physics.box2d.*;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.Actor.Player.Player;
 import io.github.dragonplatformer.Entity.Effect.Effect;
 import io.github.dragonplatformer.Entity.EffectManager;
-import io.github.dragonplatformer.GameContactListener;
-import io.github.dragonplatformer.GameScreen;
+import io.github.dragonplatformer.Screen.GameContactListener;
+import io.github.dragonplatformer.Screen.GameScreen;
 
 public class Portal extends Effect {
     public final String destination;
     public final GameScreen screen;
+    private ParticleEffect effect;
 
     public Portal(float x, float y, float width, float height, EffectManager effectManager,
                   AnimationManager animManager, World world, String destination, GameScreen screen) {
-        super(x, y, width, height, AnimationKey.EFFECT_ENEMYDEATH, effectManager, animManager, world);
+        super(x, y, width, height, AnimationKey.EFFECT_EMPTY, effectManager, animManager, world);
         getBody().setType(BodyDef.BodyType.StaticBody);
         this.destination = destination;
         this.screen = screen;
@@ -29,11 +31,15 @@ public class Portal extends Effect {
         fixture.getFilterData().categoryBits = GameContactListener.FilterBits.SENSOR.getBit();
         fixture.setUserData(this);
         collisionRec.dispose();
+        init();
+
+        effect = effectManager.obtainPortal();
+        effect.setPosition(getPosition().x, getPosition().y);
     }
 
     @Override
     public void act(float delta) {
-
+        effect.setPosition(getPosition().x, getPosition().y);
     }
 
     @Override
@@ -46,5 +52,11 @@ public class Portal extends Effect {
     @Override
     public void endContact(Fixture entityFixture, Fixture contactFixture) {
 
+    }
+
+    @Override
+    public void destroy() {
+        super.destroy();
+        effect.allowCompletion();
     }
 }

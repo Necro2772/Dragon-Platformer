@@ -4,7 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
-import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.Claw;
+import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.EmptyMelee;
 import io.github.dragonplatformer.Entity.EffectManager;
 
 public class WyvernMelee extends Enemy {
@@ -75,7 +75,7 @@ public class WyvernMelee extends Enemy {
                 break;
             case FLYSHOOTPROJECTILE:
                 stats().incrementComboCount();
-                new Claw(1, 1, 3,
+                new EmptyMelee(1, 1, 0.2f, 3,
                     new Vector2(attackTarget).sub(getPosition()).setLength(2), effectManager, animManager, getBody());
                 break;
         }

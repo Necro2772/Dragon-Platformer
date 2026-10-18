@@ -12,7 +12,7 @@ import io.github.dragonplatformer.Entity.MovementType;
 public class VortexFireball extends Projectile {
     public VortexFireball(float damage, float knockback, float health, float x, float y, float diameter,
                           Vector2 targetPos, EffectManager effectManager, AnimationManager animManager, boolean isPlayer, World world) {
-        super(damage, knockback, health, 4f, x, y, 1, 1,
+        super(damage, knockback, health, 4f, x, y, 1, 1, effectManager.obtainFireball(),
             AnimationKey.EFFECT_FIREBALL, effectManager, animManager, isPlayer, world);
         setCollisionAsCircle(diameter / 2 - 0.1f, new Vector2(0.1f, 0));
         setReflectOnStatic();

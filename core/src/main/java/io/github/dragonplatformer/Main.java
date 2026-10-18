@@ -2,11 +2,23 @@ package io.github.dragonplatformer;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerStats;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.BreathUpgrade.FireBreath;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.BreathUpgrade.IceBreath;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.EvadeUpgrade.DefaultEvade;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.EvadeUpgrade.FireEvade;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.EvadeUpgrade.IceEvade;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.MeleeUpgrade.DefaultMelee;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.MeleeUpgrade.EarthMelee;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.MeleeUpgrade.FireMelee;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.MeleeUpgrade.IceMelee;
+import io.github.dragonplatformer.Screen.GameScreen;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends Game {
@@ -14,19 +26,28 @@ public class Main extends Game {
     public BitmapFont font;
     public ExtendViewport viewport;
     public AssetManager manager;
-    public MainMenu menu;
+    public LoadScreen currentLevel;
+    public CharacterStatsScreen statsScreen;
+    public Screen currentScreen;
+    public PlayerStats playerStats;
 
     @Override
     public void create() {
         batch = new SpriteBatch();
-        viewport = new ExtendViewport(42, 24, new OrthographicCamera());
+        viewport = new ExtendViewport(42, 24, 60, 30, new OrthographicCamera());
         font = new BitmapFont();
         font.setUseIntegerPositions(true);
         font.getData().setScale(27f / Gdx.graphics.getHeight() * 15);
         manager = new AssetManager();
 
-        menu = new MainMenu(this, "tiledmaps/cave-1.tmx");
-        this.setScreen(menu);
+        playerStats = new PlayerStats(20, 20, 0);
+
+        playerStats.upgrade(new DefaultMelee(1));
+        playerStats.upgrade(new FireBreath(1));
+        playerStats.upgrade(new DefaultEvade(1));
+
+        currentLevel = new LoadScreen(this, "tiledmaps/hub.tmx");
+        this.setScreen(currentLevel);
     }
 
     @Override
@@ -45,8 +66,24 @@ public class Main extends Game {
     }
 
     public void loadNewLevel(String newLevel) {
-        menu = new MainMenu(this, "tiledmaps/" + newLevel + ".tmx");
-        this.setScreen(menu);
+        currentLevel = new LoadScreen(this, "tiledmaps/" + newLevel + ".tmx");
+        this.setScreen(currentLevel);
+    }
+
+    public void returnToHub() {
+        playerStats.setHealth(playerStats.getMaxHealth());
+        playerStats.addCrystals(-playerStats.getCrystals());
+        loadNewLevel("hub");
+    }
+
+    public void openStats(GameScreen currentScreen) {
+        if (statsScreen == null) statsScreen = new CharacterStatsScreen(this);
+        this.currentScreen = currentScreen;
+        this.setScreen(statsScreen);
+    }
+
+    public void closeStats() {
+        this.setScreen(currentScreen);
     }
 
     @Override

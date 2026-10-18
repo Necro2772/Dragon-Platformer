@@ -1,5 +1,6 @@
 package io.github.dragonplatformer.Entity.Effect.AttackEffect.Projectile;
 
+import com.badlogic.gdx.graphics.g2d.ParticleEffect;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import io.github.dragonplatformer.Entity.AnimationKey;
@@ -9,7 +10,8 @@ import io.github.dragonplatformer.Entity.Effect.AttackEffect.AttackEffect;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.MeleeAttack;
 import io.github.dragonplatformer.Entity.Effect.EffectState;
 import io.github.dragonplatformer.Entity.EffectManager;
-import io.github.dragonplatformer.GameContactListener;
+import io.github.dragonplatformer.Entity.MovementType;
+import io.github.dragonplatformer.Screen.GameContactListener;
 
 public abstract class Projectile extends AttackEffect {
     private float health;
@@ -22,9 +24,17 @@ public abstract class Projectile extends AttackEffect {
     private float restitution;
     private boolean destroyOnEnemy = true;
     private final boolean isPlayer;
+    private final ParticleEffect effect;
 
     public Projectile(float damage, float knockback, float health, float lifetime, float x, float y,
-                      float width, float height, AnimationKey animKey, EffectManager effectManager,
+                      float radius, ParticleEffect effect, AnimationKey animKey, EffectManager effectManager,
+                      AnimationManager animManager, boolean isPlayer, World world) {
+        this(damage, knockback, health, lifetime, x, y, radius, radius, effect, animKey, effectManager, animManager, isPlayer, world);
+        setCollisionAsCircle(radius, new Vector2());
+    }
+
+    public Projectile(float damage, float knockback, float health, float lifetime, float x, float y,
+                      float width, float height, ParticleEffect effect, AnimationKey animKey, EffectManager effectManager,
                       AnimationManager animManager, boolean isPlayer, World world) {
         super(damage, knockback, x, y, width, height, animKey, effectManager, animManager, world);
         this.health = health;
@@ -32,6 +42,10 @@ public abstract class Projectile extends AttackEffect {
         this.isPlayer = isPlayer;
         bodyFixtureShape = new PolygonShape();
         ((PolygonShape) bodyFixtureShape).setAsBox(getWidth() / 2f, getHeight() / 2f, new Vector2(), 0);
+
+        this.effect = effect;
+        this.effect.start();
+        this.effect.setPosition(getPosition().x, getPosition().y);
     }
 
     @Override
@@ -118,6 +132,7 @@ public abstract class Projectile extends AttackEffect {
     public void act(float delta) {
         super.act(delta);
         lifetime -= delta;
+        effect.setPosition(getPosition().x, getPosition().y);
         if (getState() != EffectState.DESTROYED) {
             if (health <= 0) setState(EffectState.DESTROYED);
             else if (lifetime <= 0) {
@@ -125,6 +140,12 @@ public abstract class Projectile extends AttackEffect {
                 destroy();
             }
         }
+    }
+
+    @Override
+    public void destroy() {
+        effect.allowCompletion();
+        super.destroy();
     }
 
     public void onExpire() {
@@ -141,13 +162,39 @@ public abstract class Projectile extends AttackEffect {
             float damage = collideProjectile.health;
             collideProjectile.health -= this.health;
             this.health -= damage;
+            return true;
         } else if (contactFixture.getUserData() instanceof MeleeAttack) {
             MeleeAttack collideAttack = (MeleeAttack) contactFixture.getUserData();
-            this.health -= collideAttack.getDamage() * 1.5f;
+            if (collideAttack.getReflect()) reflect();
+            else this.health -= collideAttack.getDamage() * 1.5f;
+            return collideAttack.getDamage() > 0;
         } else {
             if (destroyOnStatic) this.health = 0;
+            return true;
         }
         return result;
+    }
+
+    public void reflect() {
+        applyWeightedImpulse(new Vector2(getBody().getLinearVelocity()).scl(-2));
+        if (getMovementType() == MovementType.LINE) {
+            Vector2 target = new Vector2(getTargetPos());
+            setTargetPos(new Vector2(spawnPos()));
+            spawnPos().set(target);
+        }
+
+        for (Fixture fixture : getBody().getFixtureList()) {
+            Filter filter = fixture.getFilterData();
+            if (filter.groupIndex == GameContactListener.FilterGroup.ENEMYATTACK.getBit()) {
+                filter.groupIndex = GameContactListener.FilterGroup.PLAYERATTACK.getBit();
+            }
+            if ((filter.maskBits & GameContactListener.FilterBits.PLAYER.getBit())
+                == GameContactListener.FilterBits.PLAYER.getBit()) {
+                filter.maskBits -= GameContactListener.FilterBits.PLAYER.getBit();
+                filter.maskBits += GameContactListener.FilterBits.ENEMY.getBit();
+            }
+            fixture.setFilterData(filter);
+        }
     }
 
     public void setHealth(float health) {

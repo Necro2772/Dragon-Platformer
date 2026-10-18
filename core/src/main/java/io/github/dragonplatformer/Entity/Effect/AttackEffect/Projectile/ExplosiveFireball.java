@@ -13,11 +13,10 @@ import io.github.dragonplatformer.Entity.MovementType;
 public class ExplosiveFireball extends Projectile {
     float explosionDamage;
     float explosionKnockback;
-    ParticleEffect fireballEffect;
 
     public ExplosiveFireball(float damage, float knockback, float health, float x, float y, float diameter,
                              Vector2 targetPos, EffectManager effectManager, AnimationManager animationManager, boolean isPlayer, World world) {
-        super(0, 0, health, 2, x, y, diameter, diameter,
+        super(0, 0, health, 2, x, y, diameter, diameter, effectManager.obtainFireballMedium(),
             AnimationKey.EFFECT_FIREBALL, effectManager, animationManager, isPlayer, world);
         setCollisionAsCircle(diameter / 2 - 0.2f, new Vector2());
         this.explosionDamage = damage;
@@ -28,23 +27,12 @@ public class ExplosiveFireball extends Projectile {
         setSpeed(18);
         setAcceleration(100);
         init();
-        setVisible(false);
-        fireballEffect = effectManager.obtainFireballMedium();
-        fireballEffect.start();
-        fireballEffect.setPosition(getPosition().x, getPosition().y);
-    }
-
-    @Override
-    public void act(float delta) {
-        super.act(delta);
-        fireballEffect.setPosition(getPosition().x, getPosition().y);
     }
 
     @Override
     public boolean hit(Fixture contactFixture) {
-        new FireballExplosion(getBody().getPosition(), explosionDamage, explosionKnockback, 6, 6,
+        new FireballExplosion(getBody().getPosition(), explosionDamage, explosionKnockback,
             new Vector2(0, 0), effectManager, animManager, getIsPlayer(), getBody().getWorld());
-        fireballEffect.setDuration(0);
         return super.hit(contactFixture);
     }
 }

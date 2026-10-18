@@ -1,18 +1,19 @@
 package io.github.dragonplatformer.Entity;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
-import io.github.dragonplatformer.GameContactListener;
+import io.github.dragonplatformer.Screen.GameContactListener;
 import io.github.dragonplatformer.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 public abstract class Entity<T extends EntityState> {
     protected final AnimationManager animManager;
@@ -45,6 +46,9 @@ public abstract class Entity<T extends EntityState> {
     private float hitStunTimer = 0;
     private final Vector2 bufferedVelocity = new Vector2();
     private boolean visible = true;
+    private final List<PatrolPoint> patrolPath = new ArrayList<>();
+    private float patrolTime = 0;
+    private boolean destroyed = false;
 
     public Entity(float x, float y, float width, float height, Map<T, AnimationWrapper> anims,
                   Map<T, List<AnimationEvent>> animEvents, EffectManager effectManager, AnimationManager animManager,
@@ -86,10 +90,15 @@ public abstract class Entity<T extends EntityState> {
     }
 
     public void act(float delta) {
+        if (destroyed) return;
         if (enabled) {
             movementUpdate(delta);
             updateAnimationFlags(delta);
             stateTime += delta;
+            if (getMovementType() == MovementType.PATROL) {
+                patrolTime += delta;
+                patrolTime = patrolTime % patrolPath.get(patrolPath.size() - 1).getTime();
+            }
             for(TimedImpulse timedImpulse : timedImpulses) {
                 applyWeightedImpulse(timedImpulse.getImpulse(delta));
                 timedImpulse.update(delta);
@@ -104,15 +113,26 @@ public abstract class Entity<T extends EntityState> {
         }
     }
 
+    public float getFlapReflectForce() {
+        return 2;
+    }
+
     private void movementUpdate(float delta) {
         if (isAutoMove()) {
+            if (getMovementType() == MovementType.PATROL) {
+                float time = Math.max(0.05f, getNextPatrolPoint().getTime() - patrolTime);
+                Vector2 vel = getMovementDirection().scl(1 / time);
+                vel.sub(getBody().getLinearVelocity()).add(getTargetVel());
+                applyWeightedForce(vel.scl(1 / time));
+                return;
+            }
             Vector2 direction = getMovementDirection();
             if (isFlying()) {
                 if (anims.get(getState()).getKeyFrameIndex(getStateTime()) == 0 &&
                     anims.get(getState()).getKeyFrameIndex(getStateTime() + delta) == 1) {
-                    float jumpBoost = 4;
+                    float jumpBoost = 2 * getFlapReflectForce();
                     if (getBody().getLinearVelocity().y < 0 && direction.y >= 0) {
-                        applyTimedImpulse(0, -getBody().getLinearVelocity().y * 2, 0.2f);
+                        applyTimedImpulse(0, -getBody().getLinearVelocity().y * getFlapReflectForce(), 0.2f);
                     }
                     applyClampedTimedImpulse(
                         direction.scl(getAcceleration() * anims.get(getState()).getAnimationDuration()),
@@ -211,13 +231,18 @@ public abstract class Entity<T extends EntityState> {
             case CIRCLE:
             case CAUTION:
                 break;
+            case PATROL:
+                direction.set(getNextPatrolPoint().getPoint()).add(targetPos);
+                direction.sub(getPosition());
+                break;
         }
         return direction;
     }
 
-    public void setSpawnDelay(float spawnDelay) {
+    public Entity<T> setSpawnDelay(float spawnDelay) {
         this.enabled = false;
         this.spawnDelay = spawnDelay;
+        return this;
     }
 
     /**
@@ -372,8 +397,19 @@ public abstract class Entity<T extends EntityState> {
         return anims.get(getState());
     }
 
-    public void destroy() {
-        getBody().getWorld().destroyBody(getBody());
+    protected void destroy() {
+        if (!destroyed) {
+            destroyed = true;
+            getBody().getWorld().destroyBody(getBody());
+        }
+    }
+
+    public boolean isDestroyed() {
+        return destroyed;
+    }
+
+    protected void setDestroyed() {
+        this.destroyed = true;
     }
 
     /**
@@ -484,6 +520,10 @@ public abstract class Entity<T extends EntityState> {
         timedImpulses.add(new TimedImpulse(impulse, duration));
     }
 
+    public void cancelTimedImpulses(Predicate<TimedImpulse> filter) {
+        timedImpulses.removeIf(filter);
+    }
+
     public void applyTurnForce(float turnAcceleration, int direction) {
         applyWeightedForce(new Vector2(getBody().getLinearVelocity())
             .setAngleDeg(getBody().getLinearVelocity().angleDeg() + 90 * direction).setLength(turnAcceleration));
@@ -592,7 +632,7 @@ public abstract class Entity<T extends EntityState> {
         return hitStunTimer > 0;
     }
 
-    private static class TimedImpulse {
+    public static class TimedImpulse {
         public Vector2 impulse;
         public float duration;
 
@@ -612,6 +652,39 @@ public abstract class Entity<T extends EntityState> {
 
         public boolean isExpired() {
             return this.duration <= 0;
+        }
+    }
+
+    public void addPatrolPoints(List<PatrolPoint> path) {
+        patrolPath.addAll(path);
+    }
+
+    public PatrolPoint getNextPatrolPoint() {
+        if (patrolPath.isEmpty()) return null;
+        PatrolPoint nextPoint = patrolPath.get(patrolPath.size() - 1);
+        for (int i = 0; i < patrolPath.size(); i++) {
+            if (patrolPath.get(i).time > patrolTime % patrolPath.get(patrolPath.size() - 1).time) {
+                nextPoint = patrolPath.get(i);
+                break;
+            }
+        }
+        return nextPoint;
+    }
+
+    public static class PatrolPoint {
+        private final float time;
+        private final Vector2 point;
+        public PatrolPoint(float time, Vector2 point) {
+            this.time = time;
+            this.point = point;
+        }
+
+        public Vector2 getPoint() {
+            return new Vector2(point);
+        }
+
+        public float getTime() {
+            return time;
         }
     }
 }

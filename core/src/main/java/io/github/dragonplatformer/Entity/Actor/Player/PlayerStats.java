@@ -1,22 +1,31 @@
 package io.github.dragonplatformer.Entity.Actor.Player;
 import io.github.dragonplatformer.Entity.Actor.ActorStats;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.EvadeUpgrade.DefaultEvade;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.EvadeUpgrade.EvadeUpgrade;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.MeleeUpgrade.DefaultMelee;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.MeleeUpgrade.MeleeUpgrade;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.PlayerUpgrade;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.BreathUpgrade.DefaultBreath;
+import io.github.dragonplatformer.Entity.Actor.Player.PlayerUpgrade.BreathUpgrade.BreathUpgrade;
 
 public class PlayerStats extends ActorStats {
+    private BreathUpgrade breathUpgrade = new DefaultBreath(0);
+    private MeleeUpgrade meleeUpgrade = new DefaultMelee(0);
+    private EvadeUpgrade evadeUpgrade = new DefaultEvade(0);
     private int maxJumps;
     private float projectileMaxCD;
-    private float projectileCD;
+    private float projectileCD = 0;
     private float jumpMaxCD;
-    private float jumpCD;
-    public float projectileSpeed = 25;
+    private float jumpCD = 0;
     private int crystals;
-    private float soarCharge;
-    private float glideCharge;
-    private boolean evading;
-    private boolean iFramesActive;
+    private float soarCharge = 0;
+    private float glideCharge = 0;
+    private boolean evading = false;
+    private boolean iFramesActive = false;
 
     // Movement Stats
     public float groundVelX = 8;
-    public float glideVelX = 10;
+    public float glideVelX = 12;
     public float glideVelY = -3;
     public float flyVelX = 6;
     public float diveVelX = 4;
@@ -25,7 +34,7 @@ public class PlayerStats extends ActorStats {
     public float evadeVelX = 0;
 
     public float groundAccX = 60;
-    public float glideAccX = 12;
+    public float glideAccX = 10;
     public float glideAccY = 0;
     public float jumpAccX = 48;
     public float flyAccX = 12;
@@ -40,11 +49,12 @@ public class PlayerStats extends ActorStats {
     public float soarImpulseY = 10;
     public float jumpImpulseAir = 10;
     public float jumpImpulseGround = 12;
-    public float evadeImpulse = 10;
+    public float evadeImpulse = 20;
 
     public float attackGlideImpulseX = 10;
     public float attackGlideImpulseY = 4;
-    public float attackVerticalImpulse = 4;
+    public float attackDiveImpulse = 4;
+    public float attackSoarImpulse = 10;
     public float recoilAttackGroundX = 5;
     public float recoilAttackGroundY = 0;
     public float recoilAttackGlideX = 10;
@@ -54,12 +64,11 @@ public class PlayerStats extends ActorStats {
 
     public float fireballLargeRecoil = 10;
 
-    public float groundDampingX = 100;
-    public float flyDampingX = 10;
+    public float groundDampingX = 500;
+    public float flyDampingX = 8;
     public float flyDampingY = 10;
     public float fallDamping = 20;
-    public float evadeDamping = 0;
-    public float evadeDampingSmall = 10;
+    public float evadeDamping = 30;
     public float glideDampingY = 80;
 
     // GlideCharge
@@ -68,19 +77,13 @@ public class PlayerStats extends ActorStats {
     public float glideChargeMax = 1f;
     public float soarChargeMax = 1f;
 
-    public PlayerStats() {
+    public PlayerStats(int maxHealth, int health, int crystals) {
         super();
-        setMaxHealth(20);
-        setMaxJumps(4);
+        setMaxHealth(maxHealth);
+        setHealth(health);
+        this.crystals = crystals;
         setProjectileMaxCD(0.5f);
-        setProjectileCD(0);
         setJumpMaxCD(0.75f);
-        setJumpCD(0);
-        crystals = 0;
-        soarCharge = 0;
-        glideCharge = 0;
-        setEvading(false);
-        setiFramesActive(false);
     }
 
     @Override
@@ -189,5 +192,27 @@ public class PlayerStats extends ActorStats {
     @Override
     public boolean isIntangible() {
         return super.isIntangible() || isiFramesActive() || isEvading();
+    }
+
+    public BreathUpgrade getBreathUpgrade() {
+        return breathUpgrade;
+    }
+
+    public MeleeUpgrade getMeleeUpgrade() {
+        return meleeUpgrade;
+    }
+
+    public EvadeUpgrade getEvadeUpgrade() {
+        return evadeUpgrade;
+    }
+
+    public void upgrade(PlayerUpgrade upgrade) {
+        if (upgrade instanceof BreathUpgrade) {
+            breathUpgrade = (BreathUpgrade) upgrade;
+        } else if (upgrade instanceof MeleeUpgrade) {
+            meleeUpgrade = (MeleeUpgrade) upgrade;
+        } else if (upgrade instanceof EvadeUpgrade) {
+            evadeUpgrade = (EvadeUpgrade) upgrade;
+        }
     }
 }

@@ -4,7 +4,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
-import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.Claw;
+import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.EmptyMelee;
 import io.github.dragonplatformer.Entity.EffectManager;
 import io.github.dragonplatformer.Entity.MovementType;
 
@@ -74,7 +74,7 @@ public class WyvernSwoop extends Enemy {
             case FLYSHOOTPROJECTILE:
                 stats().setMinDst2(100);
                 stats().setMaxDst2(225);
-                new Claw(1, 40, 2,
+                new EmptyMelee(1, 40, 0.2f, 2,
                     new Vector2(stats().getPlayerPos()).sub(getPosition()).setLength(1f), effectManager, animManager, getBody());
                 break;
         }

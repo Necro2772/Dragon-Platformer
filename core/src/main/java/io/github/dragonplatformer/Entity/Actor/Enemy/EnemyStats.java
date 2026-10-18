@@ -30,7 +30,7 @@ public class EnemyStats extends ActorStats {
     protected float runSpeed = 5;
     protected float acceleration = 30;
     protected float flyDampingX = 30;
-    protected float flyDampingY = 60;
+    protected float flyDampingY = 40;
 
     protected EnemyStats() {
         super();

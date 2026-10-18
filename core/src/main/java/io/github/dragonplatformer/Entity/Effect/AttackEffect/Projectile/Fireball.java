@@ -10,42 +10,27 @@ import io.github.dragonplatformer.Entity.EffectManager;
 import io.github.dragonplatformer.Entity.MovementType;
 
 public class Fireball extends Projectile {
-    ParticleEffect fireEffect;
-
     public Fireball(float damage, float knockback, float health, float x, float y, float diameter,
                     Vector2 targetPos, EffectManager effectManager, AnimationManager animManager, boolean isPlayer, World world) {
-        super(damage, knockback, health, 1.3f, x, y, diameter, diameter,
+        super(damage, knockback, health, 1.5f, x, y, diameter, diameter, effectManager.obtainFireball(),
             AnimationKey.EFFECT_FIREBALL, effectManager, animManager, isPlayer, world);
         setCollisionAsCircle(diameter / 2 - 0.1f, new Vector2(0.1f, 0));
         setTargetPos(new Vector2(targetPos));
         setAutoMove(true);
         setMovementType(MovementType.LINE);
         setSpeed(16);
-        setAcceleration(100);
+        setAcceleration(10);
         init();
-        fireEffect = effectManager.obtainFireball();
-        fireEffect.start();
-        fireEffect.setPosition(getPosition().x, getPosition().y);
-        setVisible(false);
-    }
-
-    @Override
-    public void act(float delta) {
-        super.act(delta);
-        fireEffect.setPosition(getPosition().x, getPosition().y);
-    }
-
-    @Override
-    public void destroy() {
-        super.destroy();
-        fireEffect.setDuration(0);
     }
 
     @Override
     public boolean hit(Fixture contactFixture) {
-        ParticleEffect hitEffect = effectManager.obtainFireballHit();
-        hitEffect.setPosition(getPosition().x, getPosition().y);
-        hitEffect.reset();
-        return super.hit(contactFixture);
+        boolean result = super.hit(contactFixture);
+        if (result) {
+            ParticleEffect hitEffect = effectManager.obtainFireballHit();
+            hitEffect.setPosition(getPosition().x, getPosition().y);
+            hitEffect.reset();
+        }
+        return result;
     }
 }

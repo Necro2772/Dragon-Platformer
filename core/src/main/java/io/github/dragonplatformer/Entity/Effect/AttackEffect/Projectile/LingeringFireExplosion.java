@@ -10,8 +10,8 @@ public class LingeringFireExplosion extends Projectile {
 
     public LingeringFireExplosion(float damage, float knockback, float health, float x, float y, float diameter,
                                   EffectManager effectManager, AnimationManager animManager, boolean isPlayer, World world) {
-        super(damage, knockback, health, 6, x, y, diameter, diameter, AnimationKey.EFFECT_FIREBALL,
-            effectManager, animManager, isPlayer, world);
+        super(damage, knockback, health, 6, x, y, diameter, diameter, effectManager.obtainFireball(),
+            AnimationKey.EFFECT_FIREBALL, effectManager, animManager, isPlayer, world);
         setCollisionAsCircle(diameter / 2, new Vector2());
         setAutoMove(false);
         setPassThroughStatic();

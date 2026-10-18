@@ -3,13 +3,14 @@ package io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import io.github.dragonplatformer.Entity.Actor.Actor;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.Actor.Player.Player;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.AttackEffect;
-import io.github.dragonplatformer.Entity.Effect.AttackEffect.EnemyDeathVisual;
+import io.github.dragonplatformer.Entity.Effect.AttackEffect.VisualEffect.MeleeHitVisual;
 import io.github.dragonplatformer.Entity.EffectManager;
-import io.github.dragonplatformer.GameContactListener;
+import io.github.dragonplatformer.Screen.GameContactListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,10 @@ public abstract class MeleeAttack extends AttackEffect {
     private final AnimationManager animManager;
     private boolean enabled = true;
     private float spawnDelay = 0;
+    private float duration;
     private final List<Fixture> bufferedContacts = new ArrayList<>();
+
+    private boolean reflectProjectiles = false;
 
     /** Creates a new attack hitbox attached to the given body. Does not create the fixture until init() is called.
      *
@@ -31,12 +35,13 @@ public abstract class MeleeAttack extends AttackEffect {
      * @param animKey animation key from AnimationManager.
      * @param body body to attach the hitbox fixture to.
      */
-    public MeleeAttack(float damage, float knockback, float width, float height, AnimationKey animKey,
+    public MeleeAttack(float damage, float knockback, float duration, float width, float height, AnimationKey animKey,
                        EffectManager effectManager, AnimationManager animManager, Body body) {
         super(damage, knockback, width, height, animKey, effectManager, animManager, body);
         setDisjointFixture(true);
         this.isPlayer = body.getUserData() instanceof Player;
         this.animManager = animManager;
+        this.duration = duration;
     }
 
     /** Creates a new attack hitbox attached to the given body. Does not create the fixture until init() is called.
@@ -51,11 +56,12 @@ public abstract class MeleeAttack extends AttackEffect {
      * @param isPlayer true if this should hit enemies, false if it should hit the player.
      * @param world Box2D world to create the body in.
      */
-    public MeleeAttack(float x, float y, float damage, float knockback, float width, float height, AnimationKey animKey,
+    public MeleeAttack(float x, float y, float damage, float knockback, float duration, float width, float height, AnimationKey animKey,
                        EffectManager effectManager, AnimationManager animManager, boolean isPlayer, World world) {
         super(damage, knockback, x, y, width, height, animKey, effectManager, animManager, world);
         this.isPlayer = isPlayer;
         this.animManager = animManager;
+        this.duration = duration;
     }
 
     /** Initializes the fixture using a rectangle with the given width and height.
@@ -100,12 +106,12 @@ public abstract class MeleeAttack extends AttackEffect {
         filter.categoryBits = GameContactListener.FilterBits.EFFECT.getBit();
         if (isPlayer) {
             filter.maskBits = (short)(GameContactListener.FilterBits.EFFECT.getBit()
-                + GameContactListener.FilterBits.STATIC.getBit()
+                //+ GameContactListener.FilterBits.STATIC.getBit()
                 + GameContactListener.FilterBits.ENEMY.getBit());
             filter.groupIndex = GameContactListener.FilterGroup.PLAYERATTACK.getBit();
         } else {
             filter.maskBits = (short)(GameContactListener.FilterBits.EFFECT.getBit()
-                + GameContactListener.FilterBits.STATIC.getBit()
+                //+ GameContactListener.FilterBits.STATIC.getBit()
                 + GameContactListener.FilterBits.PLAYER.getBit());
             filter.groupIndex = GameContactListener.FilterGroup.ENEMYATTACK.getBit();
         }
@@ -118,30 +124,57 @@ public abstract class MeleeAttack extends AttackEffect {
 
     @Override
     public void destroy() {
+        if (isDestroyed()) return;
         if (!isDisjointFixture()) super.destroy();
-        else getBody().destroyFixture(this.attackFixture);
+        else {
+            setDestroyed();
+            getBody().destroyFixture(this.attackFixture);
+        }
     }
 
     @Override
     public boolean hit(Fixture contactFixture) {
-        new EnemyDeathVisual(getBody().getPosition().x + getPositionOffset().x,
-            getBody().getPosition().y + getPositionOffset().y, effectManager, animManager, getBody().getWorld());
-        if (getBody().getUserData() instanceof Player) {
-            Player player = ((Player) getBody().getUserData());
-            player.input().incrementMeleeHit();
+        boolean result = super.hit(contactFixture);
+        if (result) {
+            if (contactFixture.getUserData() instanceof Actor<?>) {
+                new MeleeHitVisual(
+                    getBody().getPosition().x + getPositionOffset().x,
+                    getBody().getPosition().y + getPositionOffset().y,
+                    new Vector2(contactFixture.getBody().getPosition()).sub(getBody().getPosition()).angleDeg(),
+                    effectManager, animManager, getBody().getWorld()
+                );
+            }
+            if (getBody().getUserData() instanceof Player) {
+                Player player = ((Player) getBody().getUserData());
+                player.input().incrementMeleeHit();
+            }
         }
-        return super.hit(contactFixture);
+        return result;
     }
 
     @Override
-    public void setSpawnDelay(float spawnDelay) {
+    public MeleeAttack setSpawnDelay(float spawnDelay) {
         this.spawnDelay = spawnDelay;
         this.enabled = false;
+        return this;
+    }
+
+    public MeleeAttack setReflect(boolean reflect) {
+        reflectProjectiles = reflect;
+        return this;
+    }
+
+    public boolean getReflect() {
+        return reflectProjectiles;
     }
 
     @Override
     public void act(float delta) {
-        if (this.enabled) super.act(delta);
+        if (this.enabled) {
+            super.act(delta);
+            duration -= delta;
+            if (duration <= 0) destroySafe();
+        }
         else {
             spawnDelay -= delta;
             if (spawnDelay <= 0) {

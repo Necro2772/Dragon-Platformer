@@ -11,7 +11,7 @@ import io.github.dragonplatformer.Entity.MovementType;
 public class Firebomb extends Projectile {
     public Firebomb(float damage, float knockback, float health, float x, float y, float diameter,
                     Vector2 targetPos, EffectManager effectManager, AnimationManager animManager, boolean isPlayer, World world) {
-        super(damage, knockback, health, 2f, x, y, diameter, diameter,
+        super(damage, knockback, health, 2f, x, y, diameter, diameter, effectManager.obtainFireball(),
             AnimationKey.EFFECT_FIREBALL, effectManager, animManager, isPlayer, world);
         setCollisionAsCircle(diameter / 2 - 0.1f, new Vector2(0.1f, 0));
         setTargetPos(targetPos);

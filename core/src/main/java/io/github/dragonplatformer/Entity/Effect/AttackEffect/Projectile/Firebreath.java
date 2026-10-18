@@ -12,7 +12,7 @@ public class Firebreath extends Projectile {
     public Firebreath(float damage, float knockback, float health, Vector2 aimDirection, float lifetime,
                       float x, float y, float width, float height, EffectManager effectManager,
                       AnimationManager animManager, boolean isPlayer, World world) {
-        super(damage, knockback, health, lifetime, x, y, width, height,
+        super(damage, knockback, health, lifetime, x, y, width, height, effectManager.obtainFireball(),
             AnimationKey.EFFECT_FIREBALL, effectManager, animManager, isPlayer, world);
         setReflectOnStatic();
         setPassThroughEnemies();

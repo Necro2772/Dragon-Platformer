@@ -12,13 +12,18 @@ public class FireballExplosion extends MeleeAttack {
 
     public FireballExplosion(Vector2 position, float damage, float knockback, float width, float height, Vector2 offset,
                              EffectManager effectManager, AnimationManager animationManager, boolean isPlayer, World world) {
-        super(position.x, position.y, damage, knockback, width, height,
+        super(position.x, position.y, damage, knockback, 1, width, height,
             AnimationKey.EFFECT_EXPLOSION, effectManager, animationManager, isPlayer, world);
         init(width, height, offset);
         setVisible(false);
         explosionEffect = effectManager.obtainExplosion();
         explosionEffect.reset();
         explosionEffect.setPosition(getPosition().x, getPosition().y);
+    }
+
+    public FireballExplosion(Vector2 position, float damage, float knockback, Vector2 offset,
+                             EffectManager effectManager, AnimationManager animationManager, boolean isPlayer, World world) {
+        this(position, damage, knockback, 6, 6, offset, effectManager, animationManager, isPlayer, world);
     }
 
     @Override
@@ -29,6 +34,7 @@ public class FireballExplosion extends MeleeAttack {
 
     @Override
     public void destroy() {
+        explosionEffect.allowCompletion();
         super.destroy();
     }
 }

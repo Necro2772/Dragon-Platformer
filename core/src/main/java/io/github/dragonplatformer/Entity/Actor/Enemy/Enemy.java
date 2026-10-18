@@ -4,13 +4,13 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
-import io.github.dragonplatformer.Entity.Effect.AttackEffect.EnemyDeathVisual;
+import io.github.dragonplatformer.Entity.Effect.AttackEffect.VisualEffect.EnemyDeathVisual;
 import io.github.dragonplatformer.Entity.Actor.Actor;
 import io.github.dragonplatformer.Entity.Actor.Player.Player;
 import io.github.dragonplatformer.Entity.Effect.Loot.Crystal;
 import io.github.dragonplatformer.Entity.EffectManager;
 import io.github.dragonplatformer.Entity.MovementType;
-import io.github.dragonplatformer.GameContactListener;
+import io.github.dragonplatformer.Screen.GameContactListener;
 
 import java.util.ArrayList;
 

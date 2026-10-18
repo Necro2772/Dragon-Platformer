@@ -2,8 +2,8 @@ hit
 - Delay -
 active: false
 - Duration - 
-lowMin: 50.0
-lowMax: 50.0
+lowMin: 100.0
+lowMax: 100.0
 - Count - 
 min: 0
 max: 200
@@ -22,8 +22,8 @@ timeline1: 1.0
 - Life - 
 lowMin: 0.0
 lowMax: 0.0
-highMin: 400.0
-highMax: 600.0
+highMin: 250.0
+highMax: 500.0
 relative: false
 scalingCount: 1
 scaling0: 1.0
@@ -79,8 +79,8 @@ active: false
 active: true
 lowMin: 0.0
 lowMax: 0.0
-highMin: 8.0
-highMax: 8.0
+highMin: 20.0
+highMax: 20.0
 relative: false
 scalingCount: 3
 scaling0: 1.0
@@ -96,7 +96,7 @@ lowMin: 0.0
 lowMax: 0.0
 highMin: -30.0
 highMax: 30.0
-relative: false
+relative: true
 scalingCount: 1
 scaling0: 1.0
 timelineCount: 1
@@ -121,9 +121,9 @@ colorsCount: 9
 colors0: 0.0
 colors1: 0.0
 colors2: 0.0
-colors3: 0.7254902
-colors4: 0.7254902
-colors5: 0.7254902
+colors3: 1.0
+colors4: 1.0
+colors5: 1.0
 colors6: 0.0
 colors7: 0.0
 colors8: 0.0

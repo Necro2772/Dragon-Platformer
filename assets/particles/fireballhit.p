@@ -2,16 +2,16 @@ Fire
 - Delay -
 active: false
 - Duration - 
-lowMin: 250.0
-lowMax: 250.0
+lowMin: 100.0
+lowMax: 100.0
 - Count - 
 min: 0
 max: 200
 - Emission - 
 lowMin: 0.0
 lowMax: 0.0
-highMin: 25.0
-highMax: 25.0
+highMin: 50.0
+highMax: 50.0
 relative: false
 scalingCount: 2
 scaling0: 1.0
@@ -83,8 +83,8 @@ active: false
 active: true
 lowMin: 0.0
 lowMax: 0.0
-highMin: 4.0
-highMax: 4.0
+highMin: 6.0
+highMax: 6.0
 relative: false
 scalingCount: 2
 scaling0: 1.0

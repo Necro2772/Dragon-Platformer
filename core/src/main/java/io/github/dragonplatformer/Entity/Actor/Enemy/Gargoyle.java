@@ -5,9 +5,9 @@ import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.AnimationEvent;
 import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
-import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.Claw;
+import io.github.dragonplatformer.Entity.Effect.AttackEffect.MeleeAttack.EmptyMelee;
 import io.github.dragonplatformer.Entity.EffectManager;
-import io.github.dragonplatformer.GameContactListener;
+import io.github.dragonplatformer.Screen.GameContactListener;
 
 public class Gargoyle extends Enemy {
     private final float idleWait;
@@ -28,6 +28,7 @@ public class Gargoyle extends Enemy {
         stats().setDisperseForce(80);
         stats().walkSpeed = 2;
         stats().runSpeed = 4;
+        stats().setSlowEffect(0.4f);
 
         setFlying(true);
 
@@ -72,8 +73,8 @@ public class Gargoyle extends Enemy {
         switch (animEvent.event) {
             case hitframe:
                 stats().incrementComboCount();
-                new Claw(
-                    1, 1, 4,
+                new EmptyMelee(
+                    1, 1, 0.2f, 4,
                     new Vector2(attackTarget).sub(getPosition()).setLength(3), effectManager, animManager, getBody()
                 );
                 break;

@@ -5,10 +5,13 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.World;
 import io.github.dragonplatformer.Entity.*;
 import io.github.dragonplatformer.Entity.Effect.AttackEffect.Projectile.Fireball;
+import io.github.dragonplatformer.Entity.Effect.AttackEffect.Projectile.TrackingFireball;
 
 public class Wyvern extends Enemy {
-    private final float idleWait;
-    private final float attackDelay;
+    private final float idleWait = 2f;
+    private final float comboHits = 2;
+
+
     private ParticleEffect fireChargeEffect;
 
     public Wyvern(float x, float y, World world, EffectManager effectManager, AnimationManager animManager) {
@@ -22,9 +25,6 @@ public class Wyvern extends Enemy {
         stats().runSpeed = 4;
 
         setFlying(true);
-
-        idleWait = 3f;
-        attackDelay = 0.5f;
     }
 
     @Override
@@ -34,7 +34,7 @@ public class Wyvern extends Enemy {
 
         switch (getState()) {
             case IDLE:
-                if (stats().getComboCount() < 5) {
+                if (stats().getComboCount() < comboHits) {
                     setState(EnemyState.ATTACK);
                 } else if (getStateTime() > idleWait && stats().isPlayerInRange()) {
                     stats().resetComboCount();
@@ -58,18 +58,6 @@ public class Wyvern extends Enemy {
                 fireChargeEffect = effectManager.obtainChargeFire();
                 fireChargeEffect.start();
                 fireChargeEffect.setPosition(getPosition().x + 0.7f * getSpriteDirection(), getPosition().y);
-                fireChargeEffect.setDuration(500);
-                break;
-        }
-    }
-
-    @Override
-    protected void endState() {
-        super.endState();
-        switch (getState()) {
-            case IDLE:
-                break;
-            case ATTACK:
                 break;
         }
     }
@@ -78,11 +66,29 @@ public class Wyvern extends Enemy {
     protected void onAnimEvent(AnimationEvent animEvent) {
         super.onAnimEvent(animEvent);
         if (animEvent.event == AnimationEventKey.hitframe) {
-            new Fireball(
-                1, 5, 1, getBody().getPosition().x,
-                getBody().getPosition().y + getWidth() / 2f, 1, new Vector2(stats().getPlayerPos()),
-                effectManager, animManager, false, getBody().getWorld()
-            );
+            fireChargeEffect.allowCompletion();
+            attack();
         }
+    }
+
+    private void attack() {
+//        new Fireball(
+//            1, 5, 1, getBody().getPosition().x,
+//            getBody().getPosition().y + getWidth() / 2f, 1,
+//            new Vector2(stats().getPlayerPos()),
+//            effectManager, animManager, false, getBody().getWorld()
+//        );
+        new TrackingFireball(
+            1, 5, 1, getBody().getPosition().x,
+            getBody().getPosition().y + getWidth() / 2f, 1,
+            stats().getPlayerPos(), stats().getPlayerVel(),
+            effectManager, animManager, false, getBody().getWorld()
+        );
+    }
+
+    @Override
+    public void death() {
+        super.death();
+        if (fireChargeEffect != null) fireChargeEffect.allowCompletion();
     }
 }

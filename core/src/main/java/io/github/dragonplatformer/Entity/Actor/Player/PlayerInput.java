@@ -26,8 +26,6 @@ public class PlayerInput {
 
     public void update(float delta) {
         if (getUseProjectile()) projectileCharge += delta;
-//        if (getProjectile() && breathCount < 10) breathCount += delta; // TODO: redo projectile logic
-//        else if (breathCount > 0) breathCount -= delta;
     }
 
     public boolean isGliding() {

@@ -1,13 +1,10 @@
 package io.github.dragonplatformer.Entity.Actor;
 
-import com.badlogic.gdx.graphics.g2d.Animation;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import io.github.dragonplatformer.Entity.*;
-import io.github.dragonplatformer.GameContactListener;
+import io.github.dragonplatformer.Screen.GameContactListener;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -51,6 +48,7 @@ public abstract class Actor<T extends EntityState> extends Entity<T> {
             ((CircleShape) bodyCollision).setPosition(hitboxCenter);
         }
         bodyFixtureDef.shape = bodyCollision;
+        bodyFixtureDef.restitution = 0;
 
         Fixture bodyFixture = getBody().createFixture(bodyFixtureDef);
         bodyFixture.setUserData(this);
@@ -145,37 +143,21 @@ public abstract class Actor<T extends EntityState> extends Entity<T> {
     }
 
     @Override
+    public float getFlapReflectForce() {
+        if (stats().isSlowed()) return super.getFlapReflectForce() * (1 - stats().getSlowEffect());
+        return super.getFlapReflectForce();
+    }
+
+    @Override
     public void act(float delta) {
-        super.act(delta);
-        stats().update(delta);
-        if (hitEffectTimer >= 0) hitEffectTimer -= delta;
-//        if (!overlapFixtures.isEmpty()) {
-//            Vector2 avgPos = new Vector2(getBody().getPosition());
-//            float avgMass = getBody().getMass();
-//            for (Fixture fixture : overlapFixtures) {
-//                Actor<?> c = (Actor<?>) fixture.getUserData();
-//                avgPos.add(fixture.getBody().getPosition()).add(c.getCenter());
-//                avgMass += fixture.getBody().getMass();
-//            }
-//            avgPos.scl(1f / (overlapFixtures.size() + 1));
-//            avgMass /= (overlapFixtures.size() + 1);
-//            if (getBody().getMass() <= avgMass) {
-//                float forceX = 30;
-//                float maxVel = 3;
-//                if (getCenter().add(getBody().getPosition()).x < avgPos.x
-//                    && getBody().getLinearVelocity().x > -maxVel) {
-//                    getBody().applyForceToCenter(
-//                        (-forceX - getBody().getLinearVelocity().x) * getBody().getMass(), 0,
-//                        true
-//                    );
-//                } else if (getBody().getLinearVelocity().x < maxVel){
-//                    getBody().applyForceToCenter(
-//                        (forceX - getBody().getLinearVelocity().x) * getBody().getMass(), 0,
-//                        true
-//                    );
-//                }
-//            }
-//        }
+        float timeScale = 1;
+        if (stats().isSlowed()) {
+            timeScale -= 0.8f * stats().getSlowEffect();
+            applyWeightedForce(0, -10 * stats().getSlowEffect());
+        }
+        super.act(delta * timeScale);
+        stats().update(delta * timeScale);
+        if (hitEffectTimer >= 0) hitEffectTimer -= delta * timeScale;
     }
 
     public Vector2 getHitboxPosition() {
@@ -186,6 +168,7 @@ public abstract class Actor<T extends EntityState> extends Entity<T> {
     public void beginContact(Fixture entityFixture, Fixture contactFixture) {
         if (getBody().getFixtureList().indexOf(entityFixture, true) == getJumpSensorIndex()) {
             groundContact++;
+            if (groundContact == 1) land();
         }
 //        if (getBody().getFixtureList().indexOf(entityFixture, true) == getHitboxIndex()
 //            && contactFixture.getUserData() instanceof Actor) {
@@ -206,6 +189,8 @@ public abstract class Actor<T extends EntityState> extends Entity<T> {
     public boolean isGrounded() {
         return groundContact > 0;
     }
+
+    public void land() { }
 
     public boolean damage(float attackDamage, Vector2 attackOrigin, float knockback, Fixture entityFixture) {
         if (!stats().isInvulnerable()) {

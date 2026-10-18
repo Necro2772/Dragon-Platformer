@@ -6,7 +6,7 @@ import io.github.dragonplatformer.Entity.AnimationKey;
 import io.github.dragonplatformer.Entity.AnimationManager;
 import io.github.dragonplatformer.Entity.Effect.Effect;
 import io.github.dragonplatformer.Entity.EffectManager;
-import io.github.dragonplatformer.GameContactListener;
+import io.github.dragonplatformer.Screen.GameContactListener;
 
 public abstract class Loot extends Effect {
     private boolean looted = false;
@@ -50,6 +50,7 @@ public abstract class Loot extends Effect {
         sensorShape.dispose();
 
         init();
+        setVisible(true);
     }
 
     @Override
